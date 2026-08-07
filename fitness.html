@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>督学工作台 · 🏋️ 居家健身</title>
+<script>
+/* 全局错误隔离：未捕获异常顶部红条提示，避免白屏 */
+window.addEventListener('error', function(e){
+  try{
+    var bar=document.getElementById('__errBar');
+    if(!bar){ bar=document.createElement('div'); bar.id='__errBar'; bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#c62828;color:#fff;font-size:13px;line-height:1.5;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.3)'; (document.body||document.documentElement).appendChild(bar); }
+    bar.style.display='block';
+    bar.textContent='⚠️ 页面出错：'+((e&&e.message)||'未知错误')+((e&&e.filename)?(' @ '+String(e.filename).split('/').pop()+':'+e.lineno):'');
+  }catch(_){}
+});
+</script>
+<style>
+  :root{
+    --ink:#202809; --cream:#F5F0E6; --terra:#6A7840; --terra-d:#4A542C;
+    --gray:#33432B; --card:#FFFFFF; --line:#E0DACE;
+    --shadow:0 1px 4px rgba(32,40,9,.08);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--cream); color:var(--ink); line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{display:flex; min-height:100vh}
+  /* Sidebar */
+  .sidebar{
+    width:264px; flex:0 0 264px; background:var(--ink); color:var(--cream);
+    padding:26px 18px; display:flex; flex-direction:column; gap:6px;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  .brand{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;margin-bottom:18px;padding:0 6px}
+  .brand .logo{width:40px;height:40px;border-radius:50%;background:var(--terra) center/cover no-repeat;
+    flex-shrink:0;cursor:pointer;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+  .brand .logo:hover{transform:scale(1.05)}
+  .brand b{font-size:17px;letter-spacing:.5px;margin-top:2px}
+  .brand small{display:block;color:var(--gray);font-size:11px;font-weight:400}
+  .nav-group{font-size:11px;color:var(--gray);letter-spacing:1px;margin:14px 8px 6px}
+  .nav-btn{
+    display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+    background:transparent;border:0;color:var(--cream);cursor:pointer;
+    padding:11px 12px;border-radius:11px;font-size:14.5px;font-family:inherit;
+    transition:background .15s; text-decoration:none;
+  }
+  .nav-btn .ico{width:20px;text-align:center;font-size:16px}
+  .nav-btn:hover{background:rgba(255,255,255,.06)}
+  .nav-btn.active{background:var(--terra);color:#fff;font-weight:600}
+  .side-foot{margin-top:auto;font-size:11px;color:var(--gray);padding:10px 8px;line-height:1.5}
+  /* Main */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;gap:12px;padding:16px 26px;
+    background:var(--cream);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
+  }
+  .menu-btn{display:none;background:var(--ink);color:#fff;border:0;width:38px;height:38px;border-radius:10px;font-size:18px;cursor:pointer}
+  .fit-bk-btn{margin-left:auto;background:var(--terra);color:#fff;border:0;padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .fit-bk-btn:hover{filter:brightness(.95)}
+  .fit-bk-info{font-size:11px;color:var(--gray);margin-left:4px;white-space:nowrap}
+  .topbar h1{font-size:18px;font-weight:700}
+  .topbar .sub{color:var(--gray);font-size:12.5px;margin-left:auto}
+  .content{padding:26px;max-width:1080px;width:100%;margin:0 auto}
+
+  .page-title{font-size:24px;font-weight:700;margin-bottom:4px}
+  .page-title .ac{color:var(--terra)}
+  .page-desc{color:var(--gray);font-size:13.5px;margin-bottom:20px}
+  .card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+  .card h3{font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+
+  /* ---------- Fitness: plan-driven text + video ---------- */
+  .fit-plan{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+  .fit-plan-head{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:2px}
+  .fit-plan-head .sub{font-size:13px;color:var(--gray)}
+  .fit-days{font-size:12px;color:var(--gray);background:var(--cream);border:1px solid var(--line);border-radius:999px;padding:5px 16px}
+  .fit-sec{display:flex;flex-direction:column;gap:14px}
+  .fit-sec-h{display:flex;align-items:baseline;gap:10px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  .fit-sec-h h3{margin:0;font-size:18px;color:var(--ink);font-weight:800}
+  .fit-sec-h .note{font-size:12px;color:var(--gray)}
+  .fit-item{--ac:var(--terra);--ac2:var(--terra-d);background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:0 4px 14px rgba(44,39,32,.05);display:flex;flex-direction:column;gap:10px}
+  .fit-item.core{border-left:5px solid var(--terra)}
+  .fit-item h4{margin:0;font-size:16px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .fit-item .star{color:#e8a33d;font-size:18px;line-height:1}
+  .fit-item .sets{font-size:12.5px;font-weight:700;color:var(--terra-d);background:var(--cream);border-radius:999px;padding:3px 12px;white-space:nowrap}
+  .fit-item .benefit{font-size:13px;line-height:1.65;color:var(--ink)}
+  .fit-item .benefit b{color:var(--terra-d)}
+  .fit-item ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+  .fit-item li{font-size:13px;line-height:1.6;color:var(--ink)}
+  .fit-media{width:100%;display:flex;flex-direction:column;gap:8px;margin-top:2px}
+  .fit-vid-toggle{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:13px;font-weight:600;color:var(--terra-d);background:var(--cream);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;transition:.15s}
+  .fit-vid-toggle:hover{border-color:var(--terra);background:#fff}
+  .fit-vid-toggle .tri{font-size:10px;transition:transform .2s}
+  .fit-vid-toggle.open .tri{transform:rotate(90deg)}
+  .fit-video-wrap{display:none;margin-top:2px}
+  .fit-video-wrap.open{display:block}
+  .fit-video-box{max-width:460px;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
+  .fit-video-box iframe{width:100%;height:100%;border:0;display:block}
+  .fit-video-placeholder{font-size:13px;color:var(--gray);background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:10px 12px;line-height:1.6}
+  .fit-bv-edit{display:flex;gap:8px}
+  .fit-bv-edit input{flex:1;border:1px solid var(--line);border-radius:20px;padding:8px 12px;font-size:12px;font-family:inherit;outline:none}
+  .fit-bv-edit input:focus{border-color:var(--terra)}
+  .fit-bv-edit button{background:var(--terra);color:#fff;border:0;border-radius:20px;padding:8px 14px;font-size:12px;cursor:pointer;font-weight:600}
+  .fit-bv-edit button:hover{background:var(--terra-d)}
+  @media(max-width:760px){
+    .fit-item{flex-direction:column}
+    .fit-media{width:100%}
+    .fit-video-box{max-width:100%}
+  }
+
+  /* ---------- 减脂餐抽选器样式（原 index.html 内联段，提到全局） ---------- */
+  #fitTabMeal .ml-box{background:#fbf6ec;border:1px solid var(--line);border-left:4px solid var(--terra);border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0 14px;line-height:1.7}
+  #fitTabMeal .ml-box b{color:var(--terra-d)}
+  #fitTabMeal .ml-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  #fitTabMeal .ml-filters button{font-family:inherit;font-size:13px;cursor:pointer;color:var(--terra-d);background:#fff;border:1px solid var(--line);border-radius:20px;padding:7px 14px}
+  #fitTabMeal .ml-filters button.active{background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border-color:transparent}
+  #fitTabMeal .ml-picker{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  #fitTabMeal .ml-picker .main{font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;border:none;border-radius:12px;padding:12px 18px;color:#fff;background:linear-gradient(135deg,var(--terra),var(--terra-d));box-shadow:0 2px 6px rgba(74,84,44,.25)}
+  #fitTabMeal .ml-singles{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  #fitTabMeal .ml-singles button{background:#fff;color:var(--terra-d);border:1px solid var(--line);font-size:13px;padding:9px 12px;cursor:pointer;border-radius:10px}
+  #fitTabMeal #mealResult{display:grid;gap:14px}
+  #fitTabMeal .ml-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  #fitTabMeal .ml-card h3{margin:0 0 8px;font-size:16px;display:flex;align-items:center;gap:8px}
+  #fitTabMeal .ml-badge{font-size:12px;font-weight:700;color:#fff;border-radius:8px;padding:3px 9px}
+  #fitTabMeal .ml-badge.b{background:#a8442e} #fitTabMeal .ml-badge.l{background:var(--terra)} #fitTabMeal .ml-badge.d{background:#2f7d5b}
+  #fitTabMeal .ml-name{font-size:18px;font-weight:700;margin:2px 0 6px}
+  #fitTabMeal .ml-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  #fitTabMeal .ml-tag{font-size:11.5px;background:var(--cream);border:1px solid var(--line);color:var(--gray);border-radius:20px;padding:2px 9px}
+  #fitTabMeal .ml-tag.p{color:var(--terra);border-color:#cdd4b6}
+  #fitTabMeal .ml-tag.w{color:#2f7d5b;border-color:#cfe5da}
+  #fitTabMeal .ml-tag.r{color:#a8442e;border-color:#f0c9be;background:#fdeee6}
+  #fitTabMeal .ml-desc{font-size:13.5px;color:var(--ink);margin-bottom:8px}
+  #fitTabMeal .ml-desc b{color:var(--terra-d)}
+  #fitTabMeal .ml-why{font-size:12.5px;color:var(--terra-d);background:#eef5f2;border-left:3px solid var(--terra);border-radius:8px;padding:7px 10px;margin-bottom:8px;line-height:1.6}
+  #fitTabMeal .ml-why b{color:var(--terra-d)}
+  #fitTabMeal .ml-mac{font-size:14px;font-weight:700;color:var(--terra-d);background:#fbf1e6;border:1px dashed var(--terra);border-radius:8px;padding:6px 10px;margin-bottom:8px;display:inline-block}
+  #fitTabMeal .ml-staple{font-size:14px;font-weight:600;color:var(--terra-d);background:#fbf1e6;border:1px dashed var(--terra);border-radius:8px;padding:6px 10px;margin-bottom:8px}
+  #fitTabMeal .ml-note{font-size:12.5px;color:var(--gray);background:var(--cream);border-radius:8px;padding:7px 10px;margin-top:10px;line-height:1.6}
+  #fitTabMeal .ml-vid{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--terra-d);text-decoration:none;border-bottom:1px solid var(--terra);cursor:pointer}
+  #fitTabMeal .ml-daily{margin-top:14px;padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;font-size:14px}
+  #fitTabMeal .ml-daily b{font-size:18px}
+  #fitTabMeal .ml-note2{font-size:12px;color:var(--gray);margin-top:12px;text-align:center;line-height:1.7}
+  .fit-tabs{display:flex;gap:10px;margin:6px 0 14px;flex-wrap:wrap}
+  .fit-tab{font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--terra-d);border-radius:10px;padding:9px 16px;transition:.15s}
+  .fit-tab:hover{background:#fbf1e6}
+  .fit-tab.active{background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border-color:transparent}
+  #fitTabMeal .ml-combo .ml-combo-block{margin:10px 0 4px}
+  #fitTabMeal .ml-combo .ml-combo-h{font-weight:700;color:var(--terra-d);font-size:14px;margin-bottom:3px}
+  #fitTabMeal .ml-combo .ml-combo-list{margin:0;padding-left:18px;font-size:13.5px;line-height:1.75}
+  #fitTabMeal .ml-combo .ml-combo-list li{margin:2px 0}
+  #fitTabMeal .ml-avoid{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--gray);margin-left:4px;cursor:pointer;user-select:none}
+  #fitTabMeal .ml-avoid input{width:15px;height:15px;cursor:pointer;accent-color:var(--terra)}
+  #fitTabMeal .ml-scene{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--gray);margin-left:4px;user-select:none}
+  #fitTabMeal .ml-scene select{font-family:inherit;font-size:12.5px;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+
+  /* mobile */
+  .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+  @media(max-width:820px){
+    .sidebar{position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);transition:transform .2s}
+    .sidebar.open{transform:translateX(0)}
+    .menu-btn{display:block}
+    .scrim.show{display:block}
+    .content{padding:16px}
+    .topbar{padding:12px 16px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo" id="brandAvatar"></div>
+      <b>橙子喊你学习啦</b>
+      <small id="brandQuote"></small>
+    </div>
+    <div class="nav-group">学习中心</div>
+    <a class="nav-btn" href="index.html"><span class="ico">🏠</span>总览</a>
+    <a class="nav-btn" href="politics.html"><span class="ico">📕</span>政治</a>
+    <a class="nav-btn" href="english.html"><span class="ico">🔤</span>英语</a>
+    <a class="nav-btn" href="math.html"><span class="ico">📐</span>高等数学</a>
+    <a class="nav-btn" href="computer.html"><span class="ico">💻</span>计算机</a>
+    <div class="nav-group">生活 & 规划</div>
+    <a class="nav-btn active" href="fitness.html"><span class="ico">🏋️</span>健身</a>
+    <a class="nav-btn" href="生活.html"><span class="ico">🗣️</span>生活 · 口语</a>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <h1>🏋️ 居家哑铃健身</h1>
+      <button class="fit-bk-btn" id="fitExportBtn" title="备份全部进度（含健身打卡）">📦 备份</button>
+      <button class="fit-bk-btn" id="fitImportBtn" title="从备份文件恢复">📥 导入</button>
+      <input type="file" id="fitImportFile" accept="application/json" style="display:none">
+      <span id="fitBackupInfo" class="fit-bk-info"></span>
+    </div>
+    <div class="content">
+      <div class="page-title">居家哑铃健身 <span class="ac">· 肩部训练日</span></div>
+      <div class="fit-tabs">
+        <button class="fit-tab active" data-ftab="plan">🏋️ 训练计划</button>
+        <button class="fit-tab" data-ftab="meal">🍱 减脂餐随机抽选</button>
+      </div>
+
+      <div id="fitTabPlan">
+        <div class="fit-checkin" id="fitCheckin"></div>
+        <script>
+        (function(){
+          if(!document.getElementById('checkinStyle')){
+            var s=document.createElement('style'); s.id='checkinStyle';
+            s.textContent='.fit-checkin,.oral-checkin{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f1f8f3;border:1px solid #cfe3d2;border-radius:14px;padding:14px 18px;margin:6px 0 18px}.ci-left{display:flex;flex-direction:column;gap:3px}.ci-streak{font-size:17px;font-weight:700;color:#2e7d32}.ci-sub{font-size:12px;color:#5a6b5d}.ci-btn{padding:9px 18px;border:none;border-radius:10px;background:#2e7d32;color:#fff;font-size:14px;font-weight:600;cursor:pointer}.ci-btn.done{background:#9bbf9e}.ci-btn:hover{filter:brightness(.96)}';
+            document.head.appendChild(s);
+          }
+          var KEY='fit_checkin';
+          var box=document.getElementById('fitCheckin'); if(!box) return;
+          function ymd(d){var y=d.getFullYear(),m=d.getMonth()+1,dd=d.getDate();return y+'-'+(m<10?'0'+m:m)+'-'+(dd<10?'0'+dd:dd);}
+          function load(){try{var v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
+          function save(a){localStorage.setItem(KEY,JSON.stringify(a));}
+          function streak(a){var set={};a.forEach(function(d){set[d]=1;});var t=new Date();t.setHours(0,0,0,0);var today=ymd(t);if(!set[today])t.setDate(t.getDate()-1);var n=0,c=new Date(t);while(set[ymd(c)]){n++;c.setDate(c.getDate()-1);}return n;}
+          function render(){var arr=load();var today=ymd(new Date());var done=arr.indexOf(today)>=0;var st=streak(arr);
+            box.innerHTML='<div class="ci-left"><div class="ci-streak">🔥 连续 '+st+' 天</div><div class="ci-sub">累计打卡 '+arr.length+' 次'+(done?' · 今天已打卡 ✓':'')+'</div></div><button class="ci-btn'+(done?' done':'')+'" id="fitCheckinBtn">'+(done?'✓ 今天已练':'今天练了，打卡')+'</button>';
+            var btn=document.getElementById('fitCheckinBtn');
+            btn.onclick=function(){var a=load();var t=ymd(new Date());var i=a.indexOf(t);if(i>=0){a.splice(i,1);}else{a.push(t);}save(a);render();};
+          }
+          render();
+        })();
+        </script>
+        <div class="fit-plan" id="fitPlan">
+          <div class="fit-plan-head">
+            <div class="sub" id="fitSub"></div>
+            <div class="fit-days" id="fitDays"></div>
+          </div>
+          <!-- 训练日内容由 JS 渲染 -->
+        </div>
+      </div>
+
+      <div id="fitTabMeal" hidden>
+        <div class="ml-picker">
+          <button class="main" id="mealPick3">🎲 今天吃什么（早+午+晚）</button>
+          <label class="ml-avoid"><input type="checkbox" id="avoidFish" checked> 🐟 避开含鱼（你不吃鱼）</label>
+          <label class="ml-scene">🍳 场景：
+            <select id="sceneSel">
+              <option value="all">全部</option>
+              <option value="dorm">🛏️ 宿舍版（电煮锅）</option>
+              <option value="home">🏠 居家版（炒锅）</option>
+              <option value="takeout">🥡 外卖版（点餐搭配）</option>
+            </select>
+          </label>
+          <div class="ml-singles">
+            <button data-meal="早">只抽早餐</button>
+            <button data-meal="午">只抽午餐</button>
+            <button data-meal="晚">只抽晚餐</button>
+          </div>
+        </div>
+        <div id="mealResult"><div class="ml-note2">还没抽呢～ 点上面按钮，让今天吃啥自己决定 ✨</div></div>
+        <div class="ml-daily" id="mealDaily" hidden></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="meal_dishes.js"></script>
+<script>
+  // ---- fitness: plan-driven text + video module ----
+  const fitPlan = {
+    sub: '按你的训练计划 · 点 ▶ 播放教学视频（B站）',
+    days: '肩部训练日 · 周一 / 周四 / 周六 · 40~50 分钟',
+    sections: [
+      {
+        title: '一、热身', note: '5 分钟',
+        items: [
+          {id:'s1', name:'招财猫（肩袖激活）', sets:'2 组 × 15 次', benefit:'',
+           tips:['小重量','慢慢控制','不追求累'], video:'BV1SfQ3YXEd5'},
+          {id:'w2', name:'肩部环绕', sets:'2 组 × 15 次', benefit:'活动肩关节 · 打开肩胸',
+           tips:['向前 / 向后画大圈','动作缓慢可控','沉肩，不耸肩'], video:'BV19b421e7vn'}
+        ]
+      },
+      {
+        title: '二、肩部力量训练', note: '',
+        items: [
+          {id:'w1', name:'哑铃环绕 Halo', sets:'2 组 × 10 圈', benefit:'活动肩关节 · 打开肩胸 · 减少肩紧',
+           tips:['慢慢做，不追求速度'], video:'BV1JXKtzVEGW'},
+          {id:'s2', name:'俯身反向飞鸟（后束）', sets:'3 组 × 12~15 次', benefit:'改善圆肩 · 让肩后侧立体',
+           tips:['不耸肩','不甩手'], video:'BV1of42117zi'},
+          {id:'s3', name:'反握哑铃侧平举（重点）', sets:'4 组 × 12~15 次', core:true, benefit:'⭐ 增加肩宽',
+           tips:['手肘微弯','抬到肩高度即可','下放慢 3 秒','这是你的核心动作'], video:'BV1DhKD61EuF'},
+          {id:'s4', name:'哑铃推举（前束 + 整体肩）', sets:'3 组 × 10~12 次', benefit:'',
+           tips:['不塌腰','不借力'], video:'BV13S4y1U7tJ'},
+          {id:'s5', name:'俯身划船（背部）', sets:'3 组 × 12 次', benefit:'帮助宽肩窄腰视觉 · 改善含胸',
+           tips:[], video:'BV1JD4y187xY'}
+        ]
+      },
+      {
+        title: '三、训练后拉伸', note: '5~8 分钟',
+        items: [
+          {id:'t1', name:'门框开胸', sets:'30 秒 × 2 组', benefit:'胸前打开',
+           tips:[], video:'BV1HU9MBcEdA'},
+          {id:'t2', name:'胸小肌拉伸', sets:'30 秒 × 2 组', benefit:'改善肩往前扣',
+           tips:[], video:'BV1NHp2eRE39'},
+          {id:'t3', name:'斜方肌拉伸', sets:'左右各 30 秒', benefit:'',
+           tips:['头轻轻向一侧倒','另一侧肩膀向下沉'], video:'BV1knDEBEEuh'},
+          {id:'t4', name:'下巴回收', sets:'10 次，每次保持 5 秒', benefit:'改善头前伸',
+           tips:[], video:'BV1nvgY69EcF'}
+        ]
+      }
+    ]
+  };
+
+  function fitRender(){
+    const plan=document.getElementById('fitPlan'); if(!plan) return;
+    const sub=document.getElementById('fitSub'); if(sub) sub.textContent=fitPlan.sub;
+    const days=document.getElementById('fitDays'); if(days) days.textContent=fitPlan.days;
+    let html='';
+    fitPlan.sections.forEach(sec=>{
+      html += '<div class="fit-sec"><div class="fit-sec-h"><h3>'+sec.title+'</h3>'+(sec.note?'<span class="note">'+sec.note+'</span>':'')+'</div>';
+      sec.items.forEach(ex=>{
+        const bvid=(ex.video||'').trim();
+        const mediaHtml = bvid
+          ? '<button type="button" class="fit-vid-toggle" data-bvid="'+bvid+'"><span class="tri">▶</span>看动作视频（B站）</button>'
+            + '<div class="fit-video-wrap"><div class="fit-video-box" data-vid="'+bvid+'"></div></div>'
+          : '<div class="fit-video-placeholder">该动作暂未配置视频<br>在下方填入 B 站 BV 号即可播放</div>';
+        const star = ex.core ? '<span class="star">★</span>' : '';
+        const benefit = ex.benefit ? '<div class="benefit"><b>作用：</b>'+ex.benefit+'</div>' : '';
+        const tips = (ex.tips && ex.tips.length) ? '<ul>'+ex.tips.map(t=>'<li>'+t+'</li>').join('')+'</ul>' : '';
+        html += '<div class="fit-item'+(ex.core?' core':'')+'" data-id="'+ex.id+'">'
+          + '<h4>'+star+ex.name+'<span class="sets">'+ex.sets+'</span></h4>'
+          + benefit + tips
+          + '<div class="fit-media">'+mediaHtml
+          + '<div class="fit-bv-edit"><input data-id="'+ex.id+'" value="'+bvid+'" placeholder="填写 BV 号，如 BV1xx411c7mD"><button data-save="'+ex.id+'">保存</button></div>'
+          + '</div></div>';
+      });
+      html += '</div>';
+    });
+    plan.insertAdjacentHTML('beforeend', html);
+  }
+
+  function fitBvOf(s){
+    s=(s||'').trim();
+    if(!s) return '';
+    const m=s.match(/BV[0-9A-Za-z]+/);
+    return m ? m[0] : s;
+  }
+
+  function fitSave(b){
+    const id=b.dataset.save;
+    const input=b.parentElement.querySelector('input[data-id]');
+    const val=fitBvOf(input?input.value:'');
+    let found=null;
+    fitPlan.sections.forEach(sec=>sec.items.forEach(it=>{ if(it.id===id) found=it; }));
+    if(found) found.video=val;
+    const plan=document.getElementById('fitPlan');
+    if(plan) plan.innerHTML='<div class="fit-plan-head"><div class="sub" id="fitSub"></div><div class="fit-days" id="fitDays"></div></div>';
+    fitRender();
+  }
+
+  document.getElementById('fitPlan').addEventListener('click',e=>{
+    const b=e.target.closest('button[data-save]');
+    if(b){ fitSave(b); return; }
+    const tg=e.target.closest('.fit-vid-toggle');
+    if(tg){
+      const wrap=tg.parentElement.querySelector('.fit-video-wrap');
+      const box=wrap?wrap.querySelector('.fit-video-box'):null;
+      const open=wrap && wrap.classList.contains('open');
+      if(open){
+        wrap.classList.remove('open'); tg.classList.remove('open'); tg.setAttribute('aria-expanded','false');
+        if(box){ box.innerHTML=''; delete box.dataset.loaded; }
+      }else{
+        wrap.classList.add('open'); tg.classList.add('open'); tg.setAttribute('aria-expanded','true');
+        if(box && !box.dataset.loaded){
+          const bv=tg.getAttribute('data-bvid'); if(!bv) return;
+          box.dataset.loaded='1';
+          box.innerHTML='<iframe src="https://player.bilibili.com/player.html?bvid='+bv+'&page=1&high_quality=1&danmaku=0&isOutside=true&autoplay=0" allow="autoplay; fullscreen; encrypted-media" scrolling="no" allowfullscreen="true"></iframe>';
+        }
+      }
+    }
+  });
+  fitRender();
+
+  // ---- fitness: 减脂餐随机抽选 tab ----
+  (function(){
+    const tabBtns=document.querySelectorAll('.fit-tab');
+    tabBtns.forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        tabBtns.forEach(x=>x.classList.remove('active'));
+        btn.classList.add('active');
+        const t=btn.dataset.ftab;
+        document.getElementById('fitTabPlan').hidden=(t!=='plan');
+        document.getElementById('fitTabMeal').hidden=(t!=='meal');
+      });
+    });
+
+    const D=window.MEAL_DISHES||[];
+    if(!D.length) return;
+    let lastDay={早:null,午:null,晚:null};
+    function biliSearch(name){ return 'https://search.bilibili.com/all?keyword='+encodeURIComponent(name+' 减脂餐 做法'); }
+    function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+    function avoidFish(){ const c=document.getElementById('avoidFish'); return c? c.checked : true; }
+    function curScene(){ const s=document.getElementById('sceneSel'); return s? s.value : 'all'; }
+    function sceneOk(d){
+      const sc=curScene();
+      if(sc==='all') return true;
+      if(sc==='dorm') return d.scene==='dorm' || d.scene==='both';
+      if(sc==='home') return d.scene==='home' || d.scene==='both';
+      if(sc==='takeout') return false;
+      return false;
+    }
+    function pool(meal){
+      const avoid=avoidFish();
+      let arr=D.filter(d=> d.meal.includes(meal) && (!avoid || !d.fish) && sceneOk(d));
+      if(curScene()==='dorm'){
+        if(meal==='早'){ const sim=arr.filter(d=> (d.tags||[]).includes('极简')); if(sim.length) arr=sim; }
+        if(meal==='晚'){ const no=arr.filter(d=> (d.tags||[]).includes('免煮')); if(no.length) arr=no; else { const sim=arr.filter(d=> (d.tags||[]).includes('极简')); if(sim.length) arr=sim; } }
+      }
+      return arr;
+    }
+    function tagsHtml(d){
+      let h=(d.tags||[]).map(t=>{
+        let c='ml-tag'; if(t==='高蛋白')c+=' p'; if(t==='祛湿'||t==='温性')c+=' w'; return '<span class="'+c+'">'+t+'</span>';
+      }).join('');
+      if(d.rich) h+='<span class="ml-tag r">⚠️ 解馋偏高</span>';
+      if(d.scene==='dorm') h+='<span class="ml-tag w">🔌 电煮锅</span>';
+      else if(d.scene==='home') h+='<span class="ml-tag">🍳 炒锅</span>';
+      h+='<span class="ml-tag">蛋白：'+(d.protein||'')+'</span>';
+      return h;
+    }
+    function staple(){
+      if(curScene()==='dorm'){
+        const arr=['杂粮饭（红豆薏米·电煮锅煮，祛湿）','蒸红薯（电煮锅蒸）','蒸山药（电煮锅蒸·健脾）','蒸贝贝南瓜（电煮锅蒸）','白米饭（电煮锅煮）'];
+        return arr[Math.floor(Math.random()*arr.length)];
+      }
+      return Math.random()<0.5 ? '白米饭（约150g / 一平碗）' : '杂粮饭（红豆薏米·祛湿，约150g）';
+    }
+    function card(meal,d){
+      const title=meal==='早'?'早餐':(meal==='午'?'午餐':(meal==='晚'?'晚餐':'加餐'));
+      const badge=meal==='早'?'b':(meal==='午'?'l':(meal==='晚'?'d':'s'));
+      let st='', note='';
+      if(meal==='早'){
+        note='<div class="ml-note">极简早餐＝水煮蛋/蛋制品(蛋白)＋温热主食(馒头/玉米/薯/山药/肠粉)＋奶豆＋水果，是正常早餐形态，温热好消化，不是白米饭。</div>';
+      } else if(d.cat==='卫健委'){
+        st='<div class="ml-staple">🍚 主食：套餐内已含（米饭/杂粮饭/面条等）</div>';
+        note='<div class="ml-note">✅ 这是卫健委《成人肥胖食养指南》套餐内的完整一餐，已含主食+蛋白+蔬菜。不用额外加一碗饭。</div>';
+      } else {
+        st='<div class="ml-staple">🍚 主食：'+staple()+'</div>';
+        note='<div class="ml-note">✅ 这一顿＝主食(碳水)＋这道菜(蛋白＋蔬菜)，营养才完整。只吃一道菜会缺碳水/纤维，所以都配饭。</div>';
+      }
+      const vid='<a class="ml-vid" target="_blank" rel="noopener" href="'+biliSearch(d.name)+'">↗ 去B站搜『'+d.name+'』做法视频</a>';
+      const mac='<div class="ml-mac">估算 ≈ '+d.kc+' kcal ｜ 蛋白 '+d.pr+' g</div>';
+      return '<div class="ml-card" data-m="'+meal+'"><h3><span class="ml-badge '+badge+'">'+title+'</span></h3>'
+        +'<div class="ml-name">'+d.name+'</div>'
+        +'<div class="ml-tags">'+tagsHtml(d)+'</div>'
+        +mac+st
+        +'<div class="ml-desc"><b>做法：</b>'+d.desc+'</div>'
+        +vid+note+'</div>';
+    }
+    function daily(){
+      const el=document.getElementById('mealDaily');
+      const items=[lastDay.早,lastDay.午,lastDay.晚].filter(Boolean);
+      if(items.length<3){ el.hidden=false; el.innerHTML='已抽 '+items.length+' 顿。点「🎲 今天吃什么」一次性抽早+午+晚，看完整每日合计。'; return; }
+      let kc=0,pr=0; items.forEach(d=>{kc+=d.kc;pr+=d.pr;});
+      el.hidden=false;
+      el.innerHTML='📊 今日估算合计：<b>'+kc+'</b> kcal ｜ 蛋白 <b>'+pr+'</b> g'
+        +'　<span style="font-size:12px;opacity:.9">（目标≈1550 kcal / 110g 蛋白，按份量微调）</span>';
+    }
+    function showEmpty(msg){
+      document.getElementById('mealResult').innerHTML='<div class="ml-note2">'+(msg||'该餐池为空，可能是全部避开了含鱼导致无可选。取消「🐟 避开含鱼」再试。')+'</div>';
+      document.getElementById('mealDaily').hidden=true;
+    }
+    // ===== 外卖版 =====
+    function takeoutCard(meal,item){
+      const title=meal==='早'?'早餐':(meal==='午'?'午餐':'晚餐');
+      const badge=meal==='早'?'b':(meal==='午'?'l':'d');
+      return '<div class="ml-card" data-m="'+meal+'"><h3><span class="ml-badge '+badge+'">'+title+' · 外卖</span></h3>'
+        +'<div class="ml-name">'+item.name+'</div>'
+        +'<div class="ml-tags"><span class="ml-tag p">蛋白 '+item.pr+' g</span><span class="ml-tag">≈ '+item.kc+' kcal</span></div>'
+        +'<div class="ml-desc"><b>怎么点：</b>'+(item.detail||'')+'</div>'
+        +(item.why?'<div class="ml-why"><b>💡 为什么这样搭（有理有据）：</b>'+item.why+'</div>':'')+'</div>';
+    }
+    function pickTakeout(){
+      const T=window.TAKEOUT; if(!T){ showEmpty('外卖数据缺失'); return; }
+      const b=rnd(T.meals['早']), l=rnd(T.meals['午']), d=rnd(T.meals['晚']);
+      document.getElementById('mealResult').innerHTML=takeoutCard('早',b)+takeoutCard('午',l)+takeoutCard('晚',d);
+      const el=document.getElementById('mealDaily'); el.hidden=false;
+      el.innerHTML='📊 今日外卖估算合计：<b>'+(b.kc+l.kc+d.kc)+'</b> kcal ｜ 蛋白 <b>'+(b.pr+l.pr+d.pr)+'</b> g'
+        +'　<span style="font-size:12px;opacity:.9">（外卖波动大，±15%正常；想更低卡把午/晚换成轻食）</span>';
+    }
+    function pickTakeoutOne(meal){
+      const T=window.TAKEOUT; if(!T){ showEmpty('外卖数据缺失'); return; }
+      const item=rnd(T.meals[meal]);
+      const res=document.getElementById('mealResult');
+      const old=res.querySelector('.ml-card[data-m="'+meal+'"]');
+      const html=takeoutCard(meal,item);
+      if(old){ old.outerHTML=html; } else { if(res.querySelector('.ml-note2')) res.innerHTML=''; res.insertAdjacentHTML('beforeend',html); }
+      const el=document.getElementById('mealDaily'); el.hidden=false;
+      el.innerHTML='📊 这一顿外卖估算：<b>'+item.kc+'</b> kcal ｜ 蛋白 <b>'+item.pr+'</b> g';
+    }
+    function showTakeoutGuide(){
+      const T=window.TAKEOUT||{};
+      const res=document.getElementById('mealResult');
+      res.innerHTML='<div class="ml-note2" style="text-align:left">'
+        +'<b>🥡 外卖点餐原则（蛋白优先 · 慢碳 · 多菜 · 避雷）：</b><ul style="margin:6px 0 0 18px;line-height:1.7">'
+        +(T.principles||[]).map(p=>'<li>'+p+'</li>').join('')+'</ul>'
+        +'<b style="display:block;margin-top:8px">🚫 避雷：</b><ul style="margin:6px 0 0 18px;line-height:1.7">'
+        +(T.avoid||[]).map(a=>'<li>'+a+'</li>').join('')+'</ul>'
+        +'<div style="margin-top:8px">点「🎲 今天吃什么」或右侧单抽，给你抽一套外卖搭配（含蛋白/热量估算）。</div></div>';
+      document.getElementById('mealDaily').hidden=true;
+    }
+    document.getElementById('sceneSel').addEventListener('change',()=>{
+      if(curScene()==='takeout'){ showTakeoutGuide(); }
+      else { document.getElementById('mealResult').innerHTML='<div class="ml-note2">还没抽呢～ 点上面按钮，让今天吃啥自己决定 ✨</div>'; document.getElementById('mealDaily').hidden=true; }
+    });
+    document.getElementById('mealPick3').addEventListener('click',()=>{
+      if(curScene()==='takeout'){ pickTakeout(); return; }
+      const b=rnd(pool('早'));
+      const l=rnd(pool('午'));
+      const dd=pool('晚');
+      let d=rnd(dd), g=0;
+      while(d && l && d.name===l.name && g++<20) d=rnd(dd);
+      if(!b || !l || !d){ showEmpty(); return; }
+      lastDay={早:b,午:l,晚:d};
+      document.getElementById('mealResult').innerHTML=card('早',b)+card('午',l)+card('晚',d);
+      daily();
+    });
+    document.querySelectorAll('#fitTabMeal .ml-singles button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        const meal=b.dataset.meal;
+        if(curScene()==='takeout'){ pickTakeoutOne(meal); return; }
+        const d=rnd(pool(meal));
+        if(!d){ showEmpty(); return; }
+        lastDay[meal]=d;
+        const res=document.getElementById('mealResult');
+        const old=res.querySelector('.ml-card[data-m="'+meal+'"]');
+        const html=card(meal,d);
+        if(old){ old.outerHTML=html; } else { if(res.querySelector('.ml-note2')) res.innerHTML=''; res.insertAdjacentHTML('beforeend',html); }
+        daily();
+      });
+    });
+  })();
+
+  // ---- mobile drawer ----
+  const sidebar=document.getElementById('sidebar'), scrim=document.getElementById('scrim');
+  function closeDrawer(){sidebar.classList.remove('open');scrim.classList.remove('show');}
+  document.getElementById('menuBtn').onclick=()=>{sidebar.classList.toggle('open');scrim.classList.toggle('show');};
+  scrim.onclick=closeDrawer;
+</script>
+  <script src="brand.js"></script>
+  <script>
+  /* ===== 健身页数据安全 / 自动备份（与四科页统一：duban_backup） ===== */
+  (function(){
+    var SCHEMA_VER=1;
+    var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','life_','fit_'];
+    var HAS_FSA=('showSaveFilePicker' in window);
+    var _FS_DB='_dubanFS',_FS_STORE='h',_FS_K='bk';
+    function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function backupAllKeys(){var ks=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&BK_PREFIXES.some(function(p){return k.indexOf(p)===0;}))ks.push(k);}return ks;}
+    function buildBackup(){var data={__app:'duban_backup',ver:SCHEMA_VER,ts:new Date().toISOString(),store:{}};backupAllKeys().forEach(function(k){try{data.store[k]=JSON.parse(localStorage.getItem(k));}catch(e){data.store[k]=localStorage.getItem(k);}});return data;}
+    function markBackup(ts){try{localStorage.setItem('_fitLastBackupTs',String(ts));localStorage.setItem('_schemaVersion',String(SCHEMA_VER));}catch(e){}}
+    function downloadBackup(data,name){var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){try{URL.revokeObjectURL(a.href);}catch(e){}},1000);}
+    function _fsOpen(){return new Promise(function(res,rej){var r=indexedDB.open(_FS_DB,1);r.onupgradeneeded=function(){try{r.result.createObjectStore(_FS_STORE);}catch(e){}};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+    async function _fsGet(){try{var db=await _fsOpen();return await new Promise(function(res){var t=db.transaction(_FS_STORE,'readonly').objectStore(_FS_STORE).get(_FS_K);t.onsuccess=function(){res(t.result||null);};t.onerror=function(){res(null);};});}catch(e){return null;}}
+    async function _fsSet(h){try{var db=await _fsOpen();await new Promise(function(res){var t=db.transaction(_FS_STORE,'readwrite').objectStore(_FS_STORE).put(h,_FS_K);t.onsuccess=function(){res();};t.onerror=function(){res();};});}catch(e){}}
+    async function _fsDel(){try{var db=await _fsOpen();await new Promise(function(res){var t=db.transaction(_FS_STORE,'readwrite').objectStore(_FS_STORE).delete(_FS_K);t.onsuccess=function(){res();};t.onerror=function(){res();};});}catch(e){}}
+    async function _fsWrite(handle,data){var perm;try{perm=await handle.queryPermission({mode:'readwrite'});}catch(e){perm='denied';}if(perm!=='granted'){try{perm=await handle.requestPermission({mode:'readwrite'});}catch(e){perm='denied';}}if(perm!=='granted')return false;try{var w=await handle.createWritable();await w.write(JSON.stringify(data,null,2));await w.close();return true;}catch(e){return false;}}
+    async function exportFixed(data,opts){opts=opts||{};if(!HAS_FSA){downloadBackup(data,'督学自动备份');return 'download';}var handle=await _fsGet();if(handle){var ok=await _fsWrite(handle,data);if(ok)return 'overwrite';}if(opts.silent)return 'none';try{handle=await window.showSaveFilePicker({suggestedName:'督学自动备份.json',types:[{description:'JSON 备份',accept:{'application/json':['.json']}}]});await _fsSet(handle);await _fsWrite(handle,data);return 'chosen';}catch(e){if(e&&e.name==='AbortError')return 'cancel';downloadBackup(data,'督学自动备份');return 'download';}}
+    function autoBackup(){try{var data=buildBackup();localStorage.setItem('_fitAutoBackup',JSON.stringify(data));localStorage.setItem('_fitLastAutoBackupTs',String(Date.now()));if(HAS_FSA){exportFixed(data,{silent:true});}else{var now=Date.now();var lastDl=+(localStorage.getItem('_fitLastBackupDownloadTs')||0);if(now-lastDl>7*864e5){downloadBackup(data,'督学自动备份');localStorage.setItem('_fitLastBackupDownloadTs',String(now));}}markBackup(Date.now());}catch(e){}}
+    if(window.addEventListener){window.addEventListener('pagehide',autoBackup);}
+    function showLastBackup(){var el=document.getElementById('fitBackupInfo');if(!el)return;var ts=+(localStorage.getItem('_fitLastBackupTs')||0),ats=+(localStorage.getItem('_fitLastAutoBackupTs')||0),parts=[];if(ts)parts.push('上次手动：'+new Date(ts).toLocaleString());if(ats)parts.push('自动：'+new Date(ats).toLocaleString());el.innerHTML=parts.length?('<span style="color:#888">'+esc(parts.join(' ｜ '))+'</span>'):'<span style="color:#bbb">（未备份，点「📦 备份」）</span>';}
+    async function exportBackup(){var data=buildBackup();var r=HAS_FSA?await exportFixed(data,{}):'download';if(r==='download'){downloadBackup(data,'督学自动备份');}markBackup(Date.now());showLastBackup();var tail=(r==='overwrite')?'（已自动覆盖到上次选的备份文件）':(r==='chosen')?'（已保存到所选位置，以后自动覆盖）':'（已下载为文件，建议存到 F:\\wokebuddy创造\\督学备份 并同名替换）';alert('✅ 已备份全部进度（含健身打卡、减脂餐偏好、四科进度）。\n'+tail);}
+    function importBackup(file){var reader=new FileReader();reader.onload=function(){try{var data=JSON.parse(reader.result);var store=data.store||data;if(!data||data.__app!=='duban_backup'){alert('⚠️ 文件格式不对——这不是本工具的备份文件，导入已取消。');return;}if(!confirm('导入会【覆盖】当前浏览器里你的全部进度（含健身打卡）。\n\n确定继续吗？\n（建议先点「📦 备份」把当前数据也存一份）'))return;Object.keys(store).forEach(function(k){if(k&&BK_PREFIXES.some(function(p){return k.indexOf(p)===0;})){if(store[k]==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(store[k]));}});showLastBackup();alert('✅ 导入成功！进度已恢复，页面马上刷新。');location.reload();}catch(e){alert('⚠️ 导入失败：'+(e&&e.message||e));}};reader.readAsText(file);}
+    var eb=document.getElementById('fitExportBtn');if(eb)eb.onclick=exportBackup;
+    var ib=document.getElementById('fitImportBtn');if(ib)ib.onclick=function(){var f=document.getElementById('fitImportFile');if(f)f.click();};
+    var iff=document.getElementById('fitImportFile');if(iff)iff.onchange=function(e){var f=e.target.files&&e.target.files[0];if(f)importBackup(f);e.target.value='';};
+    showLastBackup();
+  })();
+  </script>
+</body>
+</html>

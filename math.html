@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>督学工作台 · 📐 高等数学</title>
+<script>
+/* 全局错误隔离：未捕获异常顶部红条提示，避免白屏（审计报告 #1） */
+window.addEventListener('error', function(e){
+  try{
+    var bar=document.getElementById('__errBar');
+    if(!bar){ bar=document.createElement('div'); bar.id='__errBar'; bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#c62828;color:#fff;font-size:13px;line-height:1.5;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.3)'; (document.body||document.documentElement).appendChild(bar); }
+    bar.style.display='block';
+    bar.textContent='⚠️ 页面出错：'+((e&&e.message)||'未知错误')+((e&&e.filename)?(' @ '+String(e.filename).split('/').pop()+':'+e.lineno):'');
+  }catch(_){}
+});
+</script>
+<link rel="stylesheet" href="./katex/katex.min.css" />
+<script src="./katex/katex.min.js" defer></script>
+<style>
+  :root{
+    --ink:#12372A; --cream:#FBFADA; --terra:#436850; --terra-d:#2A4536;
+    --gray:#436850; --card:#FFFFFF; --line:#E9ECD9;
+    --shadow:0 1px 4px rgba(18,55,42,.08);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--cream); color:var(--ink); line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{display:flex; min-height:100vh}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:264px; flex:0 0 264px; background:var(--ink); color:var(--cream);
+    padding:26px 18px; display:flex; flex-direction:column; gap:6px;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  .brand{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;margin-bottom:18px;padding:0 6px}
+  .brand .logo{width:40px;height:40px;border-radius:50%;background:var(--terra) center/cover no-repeat;
+    flex-shrink:0;cursor:pointer;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+  .brand .logo:hover{transform:scale(1.05)}
+  .brand b{font-size:17px;letter-spacing:.5px;margin-top:2px}
+  .brand small{display:block;color:var(--gray);font-size:11px;font-weight:400}
+  .nav-group{font-size:11px;color:var(--gray);letter-spacing:1px;margin:14px 8px 6px}
+  .nav-btn{
+    display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+    background:transparent;border:0;color:var(--cream);cursor:pointer;
+    padding:11px 12px;border-radius:11px;font-size:14.5px;font-family:inherit;
+    transition:background .15s; text-decoration:none;
+  }
+  .nav-btn .ico{width:20px;text-align:center;font-size:16px}
+  .nav-btn:hover{background:rgba(255,255,255,.06)}
+  .nav-btn.active{background:var(--terra);color:#fff;font-weight:600}
+  .side-foot{margin-top:auto;font-size:11px;color:var(--gray);padding:10px 8px;line-height:1.5}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;gap:12px;padding:16px 26px;
+    background:var(--cream);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
+  }
+  .menu-btn{display:none;background:var(--ink);color:#fff;border:0;width:38px;height:38px;border-radius:10px;font-size:18px;cursor:pointer}
+  .topbar h1{font-size:18px;font-weight:700}
+  .topbar .sub{color:var(--gray);font-size:12.5px;margin-left:10px}
+  .topbar .spacer{flex:1}
+  .sync-btn{background:var(--ink);color:#fff;border:0;padding:8px 14px;border-radius:9px;cursor:pointer;font-size:13px;font-family:inherit}
+  .content{padding:24px;max-width:1100px;width:100%;margin:0 auto}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .tabs button{
+    padding:10px 20px;border-radius:11px;border:1px solid var(--line);
+    background:var(--card);color:var(--gray);cursor:pointer;font-size:15px;font-weight:600;font-family:inherit;
+  }
+  .tabs button.active{background:var(--terra);color:#fff;border-color:var(--terra)}
+
+  /* ---------- CRUD bar / buttons ---------- */
+  .crud-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .crud-bar button{padding:7px 14px;border-radius:9px;border:1px solid var(--terra);background:var(--terra);color:#fff;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit}
+  .crud-bar button.ghost{background:#fff;color:var(--terra)}
+  .crud-bar input,.crud-bar select{padding:7px 10px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;font-family:inherit;background:#fff}
+  .crud-bar .grow{flex:1;min-width:160px}
+  .mini-btn{font-size:12px;padding:3px 10px;border-radius:7px;cursor:pointer;margin-left:6px;border:1px solid var(--line);background:#fff;font-family:inherit}
+  .mini-btn.edit{border-color:var(--terra);color:var(--terra)}
+  .mini-btn.del{border-color:#e57373;color:#c62828}
+
+  /* ---------- Framework ---------- */
+  .fw-layout{display:flex;gap:18px;align-items:flex-start}
+  .fw-side{width:230px;flex:0 0 230px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;max-height:74vh;overflow:auto}
+  .fw-nav button{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:transparent;border:0;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:14px;color:var(--ink);font-family:inherit;margin-bottom:2px}
+  .fw-nav button:hover{background:var(--cream)}
+  .fw-nav button.active{background:var(--terra);color:#fff;font-weight:600}
+  .fw-nav button .cnt{font-size:11px;opacity:.7}
+  .fw-main{flex:1;min-width:0}
+  .fw-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+  .fw-head h3{font-size:18px}
+  .fw-head .sub{color:var(--gray);font-size:13px}
+  .fw-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .fw-top{display:flex;align-items:flex-start;gap:10px}
+  .fw-title{font-weight:700;font-size:15px;flex:1}
+  .fw-badges{margin-top:4px;display:flex;gap:6px;flex-wrap:wrap}
+  .badge{font-size:11.5px;padding:1px 8px;border-radius:20px;font-weight:600}
+  .badge.cat{background:var(--line);color:var(--ink)}
+  .badge.必考{background:#fdecea;color:#c62828}
+  .badge.高频{background:#fff3e0;color:#ef6c00}
+  .badge.常考{background:#e8f5e9;color:#2e7d32}
+  .badge.基础{background:#eceff1;color:#546e7a}
+  .fw-body{margin-top:8px;white-space:pre-wrap;font-size:14px;line-height:1.85;color:#2b3a30}
+  .fw-empty{padding:30px;text-align:center;color:var(--gray)}
+  .fw-tip{font-size:12.5px;color:var(--gray);margin-bottom:10px}
+
+  /* ---------- Wrong notebook ---------- */
+  .wr-info{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;color:#3a4a3f;margin-bottom:14px}
+  .wr-stat{font-size:13.5px;color:var(--gray);margin-bottom:6px}
+  .wr-chip{display:inline-block;background:var(--line);color:var(--ink);border-radius:20px;padding:2px 10px;margin:0 4px;font-size:12px}
+  .wr-ch{margin:14px 0 6px;font-weight:700;color:#2b3a30}
+  .wr-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .wr-top{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--gray);margin-bottom:6px}
+  .wr-kind{background:var(--terra);color:#fff;border-radius:20px;padding:1px 9px;font-weight:600}
+  .wr-mastered{color:#2e7d32;font-weight:600}
+  .wr-block{margin:6px 0;font-size:14px}
+  .wr-lbl{display:inline-block;font-size:12px;font-weight:700;border-radius:5px;padding:1px 8px;margin-right:8px;vertical-align:top}
+  .wr-lbl.q{background:#1a73e8;color:#fff}
+  .wr-lbl.my{background:#ef6c00;color:#fff}
+  .wr-lbl.ok{background:#2e7d32;color:#fff}
+  .wr-lbl.ch{background:var(--line);color:var(--ink)}
+  .wr-lbl.rs{background:#c62828;color:#fff}
+  .wr-lbl.dt{background:#607d8b;color:#fff}
+  .wr-acts{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+
+  /* ---------- Modal ---------- */
+  .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center}
+  .modal{background:#fff;border-radius:12px;width:min(580px,92vw);max-height:90vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+  .modal-h{background:var(--terra);color:#fff;padding:12px 16px;font-weight:700;font-size:15px;border-radius:12px 12px 0 0}
+  .modal-b{padding:14px 16px}
+  .modal-b label{display:block;margin:10px 0 4px;font-size:13px;color:#555;font-weight:600}
+  .modal-b input,.modal-b select,.modal-b textarea{width:100%;border:1px solid #ccc;border-radius:8px;padding:8px;font-size:13.5px;font-family:inherit;box-sizing:border-box}
+  .modal-b textarea{resize:vertical}
+  .modal-f{padding:12px 16px;text-align:right;border-top:1px solid #eee}
+  .modal-f button{padding:8px 18px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:14px;margin-left:8px;font-family:inherit}
+  .modal-f button.primary{background:var(--terra);color:#fff;border-color:var(--terra)}
+
+  /* ---------- Sync modal ---------- */
+  #syncModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center}
+  #syncModal>div{background:#fff;border-radius:12px;max-width:520px;width:92%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  #syncMsg{margin-top:12px;font-size:13px;color:#2e7d32;min-height:18px}
+
+  /* ---------- scrim / mobile ---------- */
+  .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+  @media(max-width:860px){
+    .sidebar{position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);transition:transform .2s}
+    .sidebar.open{transform:translateX(0)}
+    .menu-btn{display:block}
+    .scrim.show{display:block}
+    .fw-layout{flex-direction:column}
+    .fw-side{width:100%;flex:none;max-height:none}
+  }
+  .fw-card.just-added{ box-shadow:0 0 0 3px #2e7d32; }
+  .fw-math{ overflow-x:auto; padding:10px 6px; background:#f3f6f0; border:1px solid var(--line); border-radius:10px; margin:4px 0 6px; }
+  .fw-math .katex{ font-size:1.08em; }
+  .fw-explain{ font-size:13px; color:#567; line-height:1.75; margin-top:4px; white-space:normal; }
+  .fw-explain b{ color:var(--ink); }
+  .fw-img img,.wr-img img{max-width:100%;border-radius:8px;margin:6px 0;border:1px solid var(--line);display:block}
+  #fmImgPrev img,#wmImgPrev img{margin-top:6px}
+</style>
+</head>
+<body>
+<script src="math_data.js" defer></script>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo" id="brandAvatar"></div>
+      <b>橙子喊你学习啦</b>
+      <small id="brandQuote"></small>
+    </div>
+    <div class="nav-group">学习中心</div>
+    <a class="nav-btn" href="index.html"><span class="ico">🏠</span>总览</a>
+    <a class="nav-btn" href="politics.html"><span class="ico">📕</span>政治</a>
+    <a class="nav-btn" href="english.html"><span class="ico">🔤</span>英语</a>
+    <a class="nav-btn active" href="math.html"><span class="ico">📐</span>高等数学</a>
+    <a class="nav-btn" href="computer.html"><span class="ico">💻</span>计算机</a>
+    <div class="nav-group">生活 & 规划</div>
+    <a class="nav-btn" href="fitness.html"><span class="ico">🏋️</span>健身</a>
+    <a class="nav-btn" href="生活.html"><span class="ico">🗣️</span>生活 · 口语</a>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="main">
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <h1>📐 高等数学</h1>
+      <span class="sub">个人知识框架 · 错题集（数据存本机浏览器）</span>
+      <span class="spacer"></span>
+      <button class="sync-btn" id="syncBtn">⚙️ 同步/备份</button>
+      <button class="sync-btn" id="intakeBtn" style="background:#2e7d32">📄 文档摄入</button>
+    </div>
+    <div class="content">
+      <div id="bootSkel" style="padding:22px;display:flex;flex-direction:column;gap:12px">
+        <div style="height:60px;border-radius:12px;background:#eef1ee"></div>
+        <div style="height:60px;border-radius:12px;background:#e9eee9"></div>
+        <div style="height:60px;border-radius:12px;background:#eef1ee"></div>
+        <div style="text-align:center;color:#9aa39d;font-size:13px;margin-top:6px">⏳ 数据加载中…</div>
+      </div>
+      <div class="tabs">
+        <button data-tab="fw" class="active">📚 知识框架</button>
+        <button data-tab="wrong">📕 错题集<span id="wrongCount" style="display:none;margin-left:6px;background:#e53935;color:#fff;font-size:11px;min-width:17px;height:17px;line-height:17px;border-radius:9px;padding:0 4px;text-align:center"></span></button>
+      </div>
+
+      <!-- 知识框架 -->
+      <div id="fwView">
+        <div class="crud-bar">
+          <button id="fwAddCh">➕ 新增章节</button>
+          <input id="fwSearch" class="grow" placeholder="🔍 搜索标题 / 内容（跨全章）…" />
+          <select id="fwCat">
+            <option value="all">全部类型</option>
+            <option value="考纲">考纲</option>
+            <option value="公式">公式</option>
+            <option value="必备">必备知识点</option>
+            <option value="笔记">笔记</option>
+            <option value="大概">大概知识点</option>
+          </select>
+          <button class="ghost" id="fwReset">↺ 恢复初始框架</button>
+        </div>
+        <div class="fw-layout">
+          <div class="fw-side"><div class="fw-nav" id="fwNav"></div></div>
+          <div class="fw-main" id="fwMain"></div>
+        </div>
+      </div>
+
+      <!-- 错题集 -->
+      <div id="wrongView" style="display:none">
+        <div class="crud-bar">
+          <button id="wrAdd">➕ 新增错题</button>
+          <input id="wrSearch" class="grow" placeholder="🔍 搜索题目 / 章节 / 错因…" />
+        </div>
+        <div id="wrMain"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 同步/备份 modal -->
+<div id="syncModal">
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <b style="font-size:16px">⚙️ 数据同步 / 备份</b>
+      <span id="syncClose" style="cursor:pointer;font-size:20px;color:#888">✕</span>
+    </div>
+    <p style="font-size:13px;color:#555;line-height:1.7;margin:6px 0 14px">所有进度（框架编辑、错题）默认只存在你<b>当前这台设备的浏览器</b>里，换设备/清缓存会丢。用<b>导出</b>下载备份文件，到另一台设备打开网页点<b>导入</b>即可同步；建议定期备份防丢。</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button id="syncExport" style="padding:9px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">⬇️ 导出备份</button>
+      <button id="syncImport" style="padding:9px 16px;border-radius:8px;border:1px solid #1565c0;background:#1565c0;color:#fff;cursor:pointer;font-size:14px">⬆️ 导入备份</button>
+      <input id="syncFile" type="file" accept="application/json" style="display:none">
+    </div>
+    <div id="syncMsg"></div>
+    <div id="lastBackupInfo" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- 文档摄入 modal（AI 整理的标准 JSON → 本地覆盖层） -->
+<div id="intakeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;max-width:560px;width:92%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3);position:relative">
+    <span id="intakeClose" style="position:absolute;top:10px;right:12px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#f5f5f5;font-size:22px;color:#444;z-index:10" title="关闭">✕</span>
+    <div style="padding:18px 22px 14px;border-bottom:1px solid #eee;flex-shrink:0">
+      <b style="font-size:16px">📄 文档摄入 · 高等数学</b>
+    </div>
+    <div style="flex:1;overflow-y:auto;min-height:0;padding:14px 22px 18px">
+      <p style="font-size:13px;color:#555;line-height:1.7;margin:0 0 10px">把 AI 整理好的标准 JSON 粘贴到下方（或选 .json 文件），点「解析导入」即可把知识点加入知识框架、把错题加入错题集。内容存浏览器本地、不污染基础数据；格式见 <code>_intake/README.md</code>。</p>
+      <textarea id="intakeText" style="width:100%;height:120px;box-sizing:border-box;font-family:monospace;font-size:12px;padding:8px;border:1px solid #ccc;border-radius:8px" placeholder="在此粘贴标准 JSON（{subject:'高数', items:[...]}）…"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        <button id="intakeRun" style="padding:9px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">📥 解析导入</button>
+        <label style="font-size:13px;color:#1565c0;cursor:pointer"><input id="intakeFile" type="file" accept=".pdf,.doc,.docx,.txt,.json" style="display:none">📄 选择文件(PDF/Word/文档)</label>
+        <button id="intakeExample" style="padding:9px 14px;border-radius:8px;border:1px solid #999;background:#fff;color:#333;cursor:pointer;font-size:13px">示例</button>
+      </div>
+      <div id="intakeMsg" style="margin-top:10px;font-size:13px"></div>
+      <div id="intakePreview" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<script src="doc_intake.js"></script>
+<script>
+(function(){
+  "use strict";
+  var POL = window.POLITICS;
+  var FW_KEY = 'pol_math_fw';
+  function lsGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+  function lsSet(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function fileToDataURL(file, cb){
+    var reader=new FileReader();
+    reader.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var max=1000, w=img.width, h=img.height;
+        if(w>max||h>max){ var r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+        try{
+          var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+          cv.getContext('2d').drawImage(img,0,0,w,h);
+          cb(cv.toDataURL('image/jpeg',0.82));
+        }catch(e){ cb(reader.result); }
+      };
+      img.onerror=function(){ cb(reader.result); };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function appConfirm(msg, onYes){
+    var m=document.createElement('div'); m.className='modal-mask';
+    m.innerHTML='<div class="modal" style="max-width:380px"><div class="modal-h">⚠️ 确认操作</div>'
+      +'<div class="modal-b" style="color:#333;font-size:14px;line-height:1.6">'+esc(msg)+'</div>'
+      +'<div class="modal-f"><button id="acNo">取消</button><button id="acYes" class="primary" style="background:#c62828;color:#fff;border-color:#c62828">确定</button></div></div>';
+    document.body.appendChild(m);
+    m.querySelector('#acNo').onclick=function(){ m.remove(); };
+    m.querySelector('#acYes').onclick=function(){ m.remove(); onYes(); };
+    m.onclick=function(e){ if(e.target===m) m.remove(); };
+  }
+
+  // ===================== 知识框架 CRUD =====================
+  var CATS = ['考纲','公式','必备','笔记','大概'];
+  var PRIS = ['必考','高频','常考','基础'];
+  function getFw(){
+    var base = (POL&&POL.framework)||{chapters:[]};
+    var f = lsGet(FW_KEY);
+    var baseVer = base.fwVer||0;
+    if(!f || !f.chapters){
+      f = JSON.parse(JSON.stringify(base)); lsSet(FW_KEY, f);
+      return f;
+    }
+    if(f.fwVer!==baseVer){
+      // 合并式升级：按 idx 把 base 的 explain/latex 补进用户同名点；不增删任何点，保留用户结构
+      var basePt={};
+      (base.chapters||[]).forEach(function(c){ (c.points||[]).forEach(function(p){ if(p.idx!=null) basePt[p.idx]=p; }); });
+      var userHas={};
+      (f.chapters||[]).forEach(function(c){ (c.points||[]).forEach(function(p){ if(p.idx!=null) userHas[p.idx]=p; }); });
+      Object.keys(basePt).forEach(function(k){
+        var b=basePt[k], u=userHas[k];
+        if(u){
+          if(!u.explain && b.explain) u.explain=b.explain;
+          if(!u.latex && b.latex) u.latex=b.latex;
+        }
+      });
+      f.fwVer=baseVer; lsSet(FW_KEY, f);
+    }
+    return f;
+  }
+  function saveFw(f){ lsSet(FW_KEY, f); }
+  var curChapter = 0, curCat = 'all', curSearch = '';
+
+  function renderFwNav(fw){
+    var nav = document.getElementById('fwNav');
+    nav.innerHTML = fw.chapters.map(function(c,ci){
+      var n=c.points?c.points.length:0;
+      return '<button class="'+(ci===curChapter?'active':'')+'" data-ci="'+ci+'"><span>'+esc(c.name)+'</span><span class="cnt">'+n+'</span></button>';
+    }).join('');
+    Array.prototype.forEach.call(nav.querySelectorAll('button'), function(b){
+      b.onclick=function(){ curChapter=parseInt(b.dataset.ci,10); renderFw(); };
+    });
+  }
+  function renderFw(){
+    var fw = getFw();
+    var q = curSearch.trim().toLowerCase();
+    renderFwNav(fw);
+    var main = document.getElementById('fwMain');
+    var h='';
+    if(q){
+      // 搜索模式：跨章列出命中
+      var hit=0;
+      fw.chapters.forEach(function(c,ci){
+        var ps=(c.points||[]).filter(function(p){
+          return (p.title||'').toLowerCase().indexOf(q)>=0 || (p.content||'').toLowerCase().indexOf(q)>=0;
+        });
+        if(!ps.length) return;
+        hit+=ps.length;
+        h+='<div class="fw-ch" style="font-weight:700;margin:8px 0 6px">📂 '+esc(c.name)+' <span style="color:var(--gray);font-weight:400">('+ps.length+' 条)</span></div>';
+        ps.forEach(function(p){ h+=fwCard(p,ci); });
+      });
+      if(!hit) h='<div class="fw-empty">🔍 没有匹配「'+esc(curSearch)+'」的知识点。</div>';
+      else h='<div class="fw-tip">搜索「'+esc(curSearch)+'」命中 <b>'+hit+'</b> 条（跨全章）。</div>'+h;
+      main.innerHTML=h; bindFw(main); return;
+    }
+    var c = fw.chapters[curChapter];
+    if(!c){ main.innerHTML='<div class="fw-empty">还没有章节，点「➕ 新增章节」开始。</div>'; return; }
+    var pts=(c.points||[]).filter(function(p){ return curCat==='all'||p.cat===curCat; });
+    h+='<div class="fw-head"><h3>'+esc(c.name)+'</h3><span class="sub">'+(c.cnNum||'')+' · 共 '+(c.points?c.points.length:0)+' 个知识点</span>'
+      +'<span style="flex:1"></span><button class="crud-bar" id="fwAddPt" style="padding:6px 14px">➕ 新增知识点</button></div>';
+    if(!pts.length) h+='<div class="fw-empty">本章暂无该类型知识点，点「➕ 新增知识点」添加。</div>';
+    pts.forEach(function(p){ h+=fwCard(p,curChapter); });
+    main.innerHTML=h;
+    var addBtn=document.getElementById('fwAddPt'); if(addBtn) addBtn.onclick=function(){ openFwModal(curChapter,null); };
+    bindFw(main);
+  }
+  function fwCard(p,ci){
+    var catBadge='<span class="badge cat">'+esc(p.cat||'')+'</span>';
+    var priBadge='<span class="badge '+(p.priority||'基础')+'">'+esc(p.priority||'基础')+'</span>';
+    var img = p.img ? '<div class="fw-img"><img src="'+esc(p.img)+'" alt="知识点图片"></div>' : '';
+    var mh='';
+    if(p.cat==='公式' && p.latex){
+      try{ mh = window.katex.renderToString(p.latex, {displayMode:true, throwOnError:false, strict:false}); }
+      catch(e){ mh='<code>'+esc(p.latex)+'</code>'; }
+    }
+    var cont = (p.content&&p.content.trim())?'<div class="fw-body">'+esc(p.content).replace(/\n/g,'<br>')+'</div>':'';
+    var expl = p.explain ? '<div class="fw-explain"><b>详解：</b>'+esc(p.explain).replace(/\n/g,'<br>')+'</div>' : '';
+    var math = mh ? '<div class="fw-math">'+mh+'</div>' : '';
+    return '<div class="fw-card" data-idx="'+esc(p.idx)+'">'
+      +'<div class="fw-top"><div class="fw-title">'+esc(p.title||'')+'</div>'
+      +'<button class="mini-btn edit" data-act="edit" data-idx="'+esc(p.idx)+'">✏️</button>'
+      +'<button class="mini-btn del" data-act="del" data-idx="'+esc(p.idx)+'">🗑</button></div>'
+      +'<div class="fw-badges">'+catBadge+priBadge+'</div>'
+      +img + math + cont + expl
+      +'</div>';
+  }
+  function bindFw(main){
+    Array.prototype.forEach.call(main.querySelectorAll('.mini-btn'), function(b){
+      b.onclick=function(){
+        var idx=parseInt(b.dataset.idx,10), ci=curChapter;
+        var fw=getFw();
+        if(b.dataset.act==='del'){
+          appConfirm('删除该知识点？此操作不可撤销。', function(){
+            var c=fw.chapters[ci]; c.points=c.points.filter(function(p){return p.idx!==idx;}); saveFw(fw); renderFw();
+          });
+        } else {
+          var pt=null; (fw.chapters[ci].points||[]).forEach(function(p){ if(p.idx===idx) pt=p; });
+          openFwModal(ci, pt);
+        }
+      };
+    });
+  }
+  function openFwModal(ci, editRec){
+    var fw=getFw();
+    var chOpts=fw.chapters.map(function(c,i){ return '<option value="'+i+'"'+(i===ci?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('');
+    var catOpts=CATS.map(function(c){ return '<option value="'+c+'"'+(editRec&&editRec.cat===c?' selected':'')+'>'+c+'</option>'; }).join('');
+    var priOpts=PRIS.map(function(p){ return '<option value="'+p+'"'+(editRec&&editRec.priority===p?' selected':'')+'>'+p+'</option>'; }).join('');
+    var r=editRec||{};
+    var imgPrev = r.img ? '<div style="position:relative;display:inline-block"><img src="'+esc(r.img)+'" style="max-width:240px;border-radius:8px;border:1px solid #ddd"><button type="button" id="fmImgDel" style="position:absolute;top:4px;right:4px;background:#c62828;color:#fff;border:0;border-radius:6px;cursor:pointer;width:24px;height:24px">✕</button></div>' : '';
+    var html='<div class="modal-mask" id="fwMask"><div class="modal"><div class="modal-h">'+(editRec?'✏️ 编辑知识点':'➕ 新增知识点')+'</div>'
+      +'<div class="modal-b">'
+      +'<label>所属章节</label><select id="fmCh">'+chOpts+'</select>'
+      +'<label>类型</label><select id="fmCat">'+catOpts+'</select>'
+      +'<label>重要度</label><select id="fmPri">'+priOpts+'</select>'
+      +'<label>标题</label><input id="fmTitle" value="'+esc(r.title||'')+'" placeholder="如：两个重要极限 / 洛必达法则">'
+      +'<label>公式(LaTeX，选填，如 \\int x^2 dx；留空则按普通文本显示)</label><input id="fmLatex" value="'+esc(r.latex||'')+'" placeholder="例：\\lim_{x\\to0}\\frac{\\sin x}{x}=1">'
+      +'<label>内容（支持多行，公式可换行写）</label><textarea id="fmContent" rows="7" placeholder="公式、要点、笔记…">'+esc(r.content||'')+'</textarea>'
+      +'<label>详解（释义，可编辑补充；留空则用内置释义）</label><textarea id="fmExplain" rows="5" placeholder="公式/考点的详细解释…">'+esc(r.explain||'')+'</textarea>'
+      +'<label>公式 / 笔记图片（符号打不出？拍照或截图直接上传；或把图片发给我，我帮你转成可排版公式）</label>'
+      +'<input type="file" id="fmImg" accept="image/*">'
+      +'<div id="fmImgPrev">'+imgPrev+'</div>'
+      +'</div>'
+      +'<div class="modal-f"><button id="fmSave" class="primary">💾 保存</button><button id="fmCancel">取消</button></div>'
+      +'</div></div>';
+    var old=document.getElementById('fwMask'); if(old) old.remove();
+    document.body.insertAdjacentHTML('beforeend', html);
+    var mask=document.getElementById('fwMask');
+    var pendingImg = r.img||null;
+    var prev=document.getElementById('fmImgPrev');
+    document.getElementById('fmImg').onchange=function(e){
+      var f=e.target.files&&e.target.files[0]; if(!f) return;
+      fileToDataURL(f, function(d){ pendingImg=d; prev.innerHTML='<div style="position:relative;display:inline-block"><img src="'+d+'" style="max-width:240px;border-radius:8px;border:1px solid #ddd"><button type="button" id="fmImgDel" style="position:absolute;top:4px;right:4px;background:#c62828;color:#fff;border:0;border-radius:6px;cursor:pointer;width:24px;height:24px">✕</button></div>'; bindDel(); });
+    };
+    function bindDel(){ var d=document.getElementById('fmImgDel'); if(d) d.onclick=function(){ pendingImg=null; prev.innerHTML=''; }; }
+    bindDel();
+    document.getElementById('fmCancel').onclick=function(){ mask.remove(); };
+    mask.onclick=function(e){ if(e.target===mask) mask.remove(); };
+    document.getElementById('fmSave').onclick=function(){
+      var ch=parseInt(document.getElementById('fmCh').value,10);
+      var rec={
+        idx: r.idx!=null ? r.idx : (function(){ var m=0; fw.chapters.forEach(function(c){ (c.points||[]).forEach(function(p){ if(p.idx>m) m=p.idx; }); }); return m+1; })(),
+        title: document.getElementById('fmTitle').value.trim(),
+        cat: document.getElementById('fmCat').value,
+        priority: document.getElementById('fmPri').value,
+        level:'1', isEssay:false,
+        latex: document.getElementById('fmLatex').value.trim(),
+        content: document.getElementById('fmContent').value,
+        explain: document.getElementById('fmExplain').value,
+        img: pendingImg||'',
+        detail:''
+      };
+      if(!rec.title){ alert('标题不能为空'); return; }
+      var c=fw.chapters[ch];
+      if(editRec){
+        var found=false; (c.points||[]).forEach(function(p){ if(p.idx===editRec.idx){ Object.assign(p, rec); found=true; } });
+        if(!found){ (c.points=c.points||[]).push(rec); }
+      } else { (c.points=c.points||[]).push(rec); }
+      saveFw(fw); mask.remove();
+      curChapter=ch; curCat='all';
+      var catSel=document.getElementById('fwCat'); if(catSel) catSel.value='all';
+      renderFw();
+      var newCard=document.querySelector('.fw-card[data-idx="'+rec.idx+'"]');
+      if(newCard){ newCard.classList.add('just-added'); if(typeof newCard.scrollIntoView==='function'){ newCard.scrollIntoView({behavior:'smooth',block:'center'}); } setTimeout(function(){ if(newCard) newCard.classList.remove('just-added'); },2500); }
+    };
+  }
+  function openChModal(){
+    var html='<div class="modal-mask" id="chMask"><div class="modal"><div class="modal-h">➕ 新增章节</div>'
+      +'<div class="modal-b"><label>章节名称</label><input id="chName" placeholder="如：第十一章 多元函数积分学（曲线积分）"></div>'
+      +'<div class="modal-f"><button id="chSave" class="primary">💾 保存</button><button id="chCancel">取消</button></div></div></div>';
+    var old=document.getElementById('chMask'); if(old) old.remove();
+    document.body.insertAdjacentHTML('beforeend', html);
+    var mask=document.getElementById('chMask');
+    document.getElementById('chCancel').onclick=function(){ mask.remove(); };
+    mask.onclick=function(e){ if(e.target===mask) mask.remove(); };
+    document.getElementById('chSave').onclick=function(){
+      var name=document.getElementById('chName').value.trim();
+      if(!name){ alert('章节名称不能为空'); return; }
+      var fw=getFw();
+      fw.chapters.push({cnNum:'第'+(fw.chapters.length+1)+'章', name:name, points:[]});
+      saveFw(fw); mask.remove(); curChapter=fw.chapters.length-1; renderFw();
+    };
+  }
+
+  document.getElementById('fwAddCh').onclick=openChModal;
+  document.getElementById('fwReset').onclick=function(){
+    appConfirm('恢复为初始框架会清空你对框架的所有增删改，确定？', function(){
+      localStorage.removeItem(FW_KEY); curChapter=0; curCat='all'; curSearch='';
+      document.getElementById('fwCat').value='all'; document.getElementById('fwSearch').value='';
+      renderFw();
+    });
+  };
+  document.getElementById('fwSearch').oninput=function(e){ curSearch=e.target.value; renderFw(); };
+  document.getElementById('fwCat').onchange=function(e){ curCat=e.target.value; renderFw(); };
+
+  // ===================== 错题集 CRUD =====================
+  function getWrong(){ return lsGet('pol_wrong_math')||[]; }
+  function saveWrong(a){ lsSet('pol_wrong_math',a); updateWrongBadge(); }
+  function updateWrongBadge(){
+    var b=document.getElementById('wrongCount'); if(!b) return;
+    var n=getWrong().filter(function(r){return r.status!=='mastered';}).length;
+    b.textContent=n; b.style.display=n?'inline-block':'none';
+  }
+  function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  function renderWrong(){
+    var arr=getWrong();
+    var q=document.getElementById('wrSearch').value.trim().toLowerCase();
+    var main=document.getElementById('wrMain');
+    var h='';
+    if(q){
+      arr=arr.filter(function(r){
+        return (r.q||'').toLowerCase().indexOf(q)>=0 || (r.ch||'').toLowerCase().indexOf(q)>=0
+          || (r.reason||'').toLowerCase().indexOf(q)>=0 || (r.correct||'').toLowerCase().indexOf(q)>=0;
+      });
+      h+='<div class="wr-stat">搜索命中 <b>'+arr.length+'</b> 条。</div>';
+    } else {
+      h+='<div class="wr-stat">共 <b>'+getWrong().length+'</b> 条错题'+(getWrong().filter(function(r){return r.status==='mastered';}).length?'（含已掌握）':'')+'。</div>';
+    }
+    if(!arr.length){ h+='<div class="fw-empty">🎉 还没有错题。点「➕ 新增错题」记录第一道吧。</div>'; main.innerHTML=h; return; }
+    var groups={};
+    arr.forEach(function(r){ var c=r.ch||'未分类'; (groups[c]=groups[c]||[]).push(r); });
+    Object.keys(groups).sort().forEach(function(c){
+      h+='<div class="wr-ch">📂 '+esc(c)+' <span style="color:var(--gray);font-weight:400">('+groups[c].length+' 条)</span></div>';
+      groups[c].forEach(function(r){ h+=wrCard(r); });
+    });
+    main.innerHTML=h; bindWrong(main);
+  }
+  function wrCard(r){
+    var h='<div class="wr-item" data-wid="'+esc(r.wid)+'">';
+    h+='<div class="wr-top"><span class="wr-kind">'+(r.kind==='manual'?'我的错题':'原题')+'</span>';
+    if(r.status==='mastered') h+='<span class="wr-mastered">✅已掌握</span>';
+    h+='<span style="flex:1"></span>'+(r.date?'<span class="wr-lbl dt">'+esc(r.date)+'</span>':'')+'</div>';
+    h+='<div class="wr-block"><span class="wr-lbl q">题目</span><div style="display:inline;white-space:pre-wrap">'+esc(r.q||'')+'</div></div>';
+    h+='<div class="wr-block"><span class="wr-lbl my">我的作答</span><div style="display:inline;white-space:pre-wrap">'+esc(r.myAns||'—')+'</div></div>';
+    h+='<div class="wr-block"><span class="wr-lbl ok">正确答案</span><div style="display:inline;white-space:pre-wrap">'+esc(r.correct||'—')+'</div></div>';
+    if(r.ch) h+='<div class="wr-block"><span class="wr-lbl ch">章节</span><span>'+esc(r.ch)+'</span></div>';
+    if(r.reason) h+='<div class="wr-block"><span class="wr-lbl rs">错因</span><div style="display:inline;white-space:pre-wrap">'+esc(r.reason)+'</div></div>';
+    if(r.img) h+='<div class="wr-img"><img src="'+esc(r.img)+'" alt="错题图片"></div>';
+    h+='<div class="wr-acts"><button class="mini-btn edit" data-act="edit" data-wid="'+esc(r.wid)+'">✏️ 编辑</button>'
+      +'<button class="mini-btn edit" data-act="master" data-wid="'+esc(r.wid)+'">✅ 标记掌握</button>'
+      +'<button class="mini-btn del" data-act="del" data-wid="'+esc(r.wid)+'">🗑 删除</button></div>';
+    h+='</div>';
+    return h;
+  }
+  function bindWrong(main){
+    Array.prototype.forEach.call(main.querySelectorAll('.mini-btn'), function(b){
+      b.onclick=function(){
+        var wid=b.dataset.wid, act=b.dataset.act, a=getWrong();
+        if(act==='del'){
+          appConfirm('删除这道错题？', function(){ saveWrong(a.filter(function(r){return r.wid!==wid;})); renderWrong(); });
+        } else if(act==='master'){
+          a.forEach(function(r){ if(r.wid===wid) r.status='mastered'; }); saveWrong(a); renderWrong();
+        } else {
+          var rec=null; a.forEach(function(r){ if(r.wid===wid) rec=r; });
+          openWrongModal(rec);
+        }
+      };
+    });
+  }
+  function openWrongModal(editRec){
+    var r=editRec||{};
+    var html='<div class="modal-mask" id="wrMask"><div class="modal"><div class="modal-h">'+(editRec?'✏️ 编辑错题':'➕ 新增错题')+'</div>'
+      +'<div class="modal-b">'
+      +'<label>题目</label><textarea id="wmQ" rows="3">'+esc(r.q||'')+'</textarea>'
+      +'<label>我的作答</label><textarea id="wmMy" rows="2">'+esc(r.myAns||'')+'</textarea>'
+      +'<label>正确答案</label><textarea id="wmCor" rows="3">'+esc(r.correct||'')+'</textarea>'
+      +'<label>章节 / 标签（如 第三章 中值定理）</label><input id="wmCh" value="'+esc(r.ch||'')+'">'
+      +'<label>错因（可选）</label><textarea id="wmRs" rows="2">'+esc(r.reason||'')+'</textarea>'
+      +'<label>日期</label><input id="wmDt" type="date" value="'+esc(r.date||todayStr())+'">'
+      +'<label>题目图片（公式/步骤拍照上传，符号打不出直接传图）</label>'
+      +'<input type="file" id="wmImg" accept="image/*">'
+      +'<div id="wmImgPrev">'+(r.img?'<div style="position:relative;display:inline-block"><img src="'+esc(r.img)+'" style="max-width:240px;border-radius:8px;border:1px solid #ddd"><button type="button" id="wmImgDel" style="position:absolute;top:4px;right:4px;background:#c62828;color:#fff;border:0;border-radius:6px;cursor:pointer;width:24px;height:24px">✕</button></div>':'')+'</div>'
+      +'</div>'
+      +'<div class="modal-f"><button id="wmSave" class="primary">💾 保存</button><button id="wmCancel">取消</button></div>'
+      +'</div></div>';
+    var old=document.getElementById('wrMask'); if(old) old.remove();
+    document.body.insertAdjacentHTML('beforeend', html);
+    var mask=document.getElementById('wrMask');
+    var pendingImg = r.img||null;
+    var wprev=document.getElementById('wmImgPrev');
+    document.getElementById('wmImg').onchange=function(e){
+      var f=e.target.files&&e.target.files[0]; if(!f) return;
+      fileToDataURL(f, function(d){ pendingImg=d; wprev.innerHTML='<div style="position:relative;display:inline-block"><img src="'+d+'" style="max-width:240px;border-radius:8px;border:1px solid #ddd"><button type="button" id="wmImgDel" style="position:absolute;top:4px;right:4px;background:#c62828;color:#fff;border:0;border-radius:6px;cursor:pointer;width:24px;height:24px">✕</button></div>'; var dd=document.getElementById('wmImgDel'); if(dd) dd.onclick=function(){ pendingImg=null; wprev.innerHTML=''; }; });
+    };
+    var wd=document.getElementById('wmImgDel'); if(wd) wd.onclick=function(){ pendingImg=null; wprev.innerHTML=''; };
+    document.getElementById('wmCancel').onclick=function(){ mask.remove(); };
+    mask.onclick=function(e){ if(e.target===mask) mask.remove(); };
+    document.getElementById('wmSave').onclick=function(){
+      var q=document.getElementById('wmQ').value.trim();
+      if(!q){ alert('题目不能为空'); return; }
+      var rec={
+        wid: r.wid || ('wr_'+Date.now()+'_'+Math.floor(Math.random()*9999)),
+        kind:'manual', status: r.status||'pending',
+        q:q, myAns:document.getElementById('wmMy').value, correct:document.getElementById('wmCor').value,
+        ch:document.getElementById('wmCh').value.trim(), reason:document.getElementById('wmRs').value.trim(),
+        date:document.getElementById('wmDt').value, ts:Date.now(), img: pendingImg||''
+      };
+      var a=getWrong(); var found=false;
+      a.forEach(function(x){ if(x.wid===rec.wid){ Object.assign(x, rec); found=true; } });
+      if(!found) a.push(rec);
+      saveWrong(a); mask.remove(); renderWrong();
+    };
+  }
+  document.getElementById('wrAdd').onclick=function(){ openWrongModal(null); };
+  document.getElementById('wrSearch').oninput=function(){ renderWrong(); };
+
+  // ===================== 数据安全 / 错误隔离（审计报告 #2#3#4#5） =====================
+  var SCHEMA_VER=1;
+  // ===== File System Access API：首次选一次固定文件，之后自动覆盖（Edge/Chrome）=====
+  var HAS_FSA = ('showSaveFilePicker' in window);
+  var _FS_DB='_dubanFS', _FS_STORE='h', _FS_K='bk';
+  function _fsOpen(){ return new Promise(function(res,rej){ var r=indexedDB.open(_FS_DB,1); r.onupgradeneeded=function(){ try{ r.result.createObjectStore(_FS_STORE); }catch(e){} }; r.onsuccess=function(){ res(r.result); }; r.onerror=function(){ rej(r.error); }; }); }
+  async function _fsGet(){ try{ var db=await _fsOpen(); return await new Promise(function(res){ var t=db.transaction(_FS_STORE,'readonly').objectStore(_FS_STORE).get(_FS_K); t.onsuccess=function(){ res(t.result||null); }; t.onerror=function(){ res(null); }; }); }catch(e){ return null; } }
+  async function _fsSet(h){ try{ var db=await _fsOpen(); await new Promise(function(res){ var t=db.transaction(_FS_STORE,'readwrite').objectStore(_FS_STORE).put(h,_FS_K); t.onsuccess=function(){ res(); }; t.onerror=function(){ res(); }; }); }catch(e){} }
+  async function _fsDel(){ try{ var db=await _fsOpen(); await new Promise(function(res){ var t=db.transaction(_FS_STORE,'readwrite').objectStore(_FS_STORE).delete(_FS_K); t.onsuccess=function(){ res(); }; t.onerror=function(){ res(); }; }); }catch(e){} }
+  async function _fsWrite(handle,data){
+    var perm; try{ perm=await handle.queryPermission({mode:'readwrite'}); }catch(e){ perm='denied'; }
+    if(perm!=='granted'){ try{ perm=await handle.requestPermission({mode:'readwrite'}); }catch(e){ perm='denied'; } }
+    if(perm!=='granted') return false;
+    try{ var w=await handle.createWritable(); await w.write(JSON.stringify(data,null,2)); await w.close(); return true; }catch(e){ return false; }
+  }
+  async function exportFixed(data, opts){
+    opts=opts||{};
+    if(!HAS_FSA){ return 'download'; }
+    var handle=await _fsGet();
+    if(handle){ var ok=await _fsWrite(handle,data); if(ok) return 'overwrite'; }
+    if(opts.silent) return 'none';
+    try{
+      handle=await window.showSaveFilePicker({ suggestedName:'督学自动备份.json', types:[{description:'JSON 备份', accept:{'application/json':['.json']}}] });
+      await _fsSet(handle); await _fsWrite(handle,data); return 'chosen';
+    }catch(e){ if(e&&e.name==='AbortError') return 'cancel'; return 'download'; }
+  }
+  async function resetBackupPath(){ await _fsDel(); }
+  var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','fit_'];
+  function openSync(){ document.getElementById('syncModal').style.display='flex'; showLastBackup('lastBackupInfo'); }
+  function closeSync(){ document.getElementById('syncModal').style.display='none'; }
+  function backupAllKeys(){ var ks=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k && BK_PREFIXES.some(function(p){return k.indexOf(p)===0;})) ks.push(k); } return ks; }
+  function buildBackup(){ var data={__app:'duban_backup',ver:SCHEMA_VER,ts:new Date().toISOString(),store:{}}; backupAllKeys().forEach(function(k){ try{ data.store[k]=JSON.parse(localStorage.getItem(k)); }catch(e){ data.store[k]=localStorage.getItem(k); } }); return data; }
+  function markBackup(ts){ try{ localStorage.setItem('_lastBackupTs',String(ts)); localStorage.setItem('_schemaVersion',String(SCHEMA_VER)); }catch(e){} }
+  function downloadBackup(data,name){ var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); var a=document.createElement('a'); var d=new Date(); a.href=URL.createObjectURL(blob); a.download=name+'.json'; a.click(); URL.revokeObjectURL(a.href); }
+  function autoBackup(){ try{ var data=buildBackup(); localStorage.setItem('_autoBackup',JSON.stringify(data)); var now=Date.now(); localStorage.setItem('_lastAutoBackupTs',String(now)); if(HAS_FSA){ exportFixed(data,{silent:true}); } else { var lastDl=+(localStorage.getItem('_lastBackupDownloadTs')||0); if(now-lastDl>7*864e5){ downloadBackup(data,'督学自动备份'); localStorage.setItem('_lastBackupDownloadTs',String(now)); } } markBackup(now); }catch(e){} }
+  if(window.addEventListener){ window.addEventListener('pagehide',autoBackup); }
+  function showLastBackup(elId){ var el=document.getElementById(elId); if(!el) return; var ts=+(localStorage.getItem('_lastBackupTs')||0), ats=+(localStorage.getItem('_lastAutoBackupTs')||0), parts=[]; if(ts) parts.push('上次手动导出：'+new Date(ts).toLocaleString()); if(ats) parts.push('上次自动备份：'+new Date(ats).toLocaleString()); el.innerHTML=parts.length?('<span style="color:#888;font-size:12px">'+esc(parts.join(' ｜ '))+'</span>'):'<span style="color:#bbb;font-size:12px">（还没有备份过，建议现在点「导出备份」）</span>'; }
+  async function syncExport(){
+    var data=buildBackup();
+    var n=Object.keys(data.store).length;
+    var r = HAS_FSA ? await exportFixed(data,{}) : 'download';
+    if(r==='download'){ downloadBackup(data,'督学自动备份'); }
+    markBackup(Date.now());
+    var msg=document.getElementById('syncMsg');
+    var tail = (r==='overwrite')?'（已自动覆盖到上次选的备份文件，不新增）' : (r==='chosen')?'（已保存到所选位置，以后导出自动覆盖）' : '（已下载为文件，建议存到 F:\\wokebuddy创造\\督学备份 并同名替换）';
+    if(msg) msg.textContent='✅ 已导出 '+n+' 项进度 '+tail;
+    showLastBackup('lastBackupInfo');
+  }
+  function syncImport(file){
+    var reader=new FileReader();
+    reader.onload=function(){
+      try{
+        var raw=JSON.parse(reader.result); var store=raw.store||raw; var n=0;
+        Object.keys(store).forEach(function(k){ if(k && BK_PREFIXES.some(function(p){return k.indexOf(p)===0;})){ lsSet(k,store[k]); n++; } });
+        var msg=document.getElementById('syncMsg');
+        if(raw.ver && raw.ver!==SCHEMA_VER){ if(msg) msg.textContent='⚠️ 备份版本('+raw.ver+')与当前('+SCHEMA_VER+')不同，已尽量导入，若显示异常请重新整理。'; }
+        else { if(msg) msg.textContent='✅ 已导入 '+n+' 项，进度已同步，正在刷新…'; }
+        renderFw(); if(document.getElementById('wrongView').style.display!=='none') renderWrong();
+        setTimeout(closeSync,800);
+      }catch(e){ var msg=document.getElementById('syncMsg'); if(msg) msg.textContent='❌ 文件无法解析，请确认是导出的备份 JSON。'; }
+    };
+    reader.readAsText(file);
+  }
+
+  // ===================== 文档摄入（导入 AI 整理的标准 JSON） =====================
+  function openIntake(){ var m=document.getElementById('intakeModal'); if(m) m.style.display='flex'; }
+  function closeIntake(){ var m=document.getElementById('intakeModal'); if(m) m.style.display='none'; }
+  function setupIntakeModalClose(){
+    var m=document.getElementById('intakeModal');
+    if(m) m.addEventListener('mousedown', function(e){ if(e.target===m) closeIntake(); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeIntake(); });
+  }
+  function intakeExample(){
+    document.getElementById('intakeText').value=JSON.stringify({subject:'高数',source:'示例·导入测试',items:[
+      {type:'kp',chapter:'第一章 函数·极限·连续',title:'两个重要极限',cat:'公式',priority:'必考',latex:'\\lim_{x\\to0}\\frac{\\sin x}{x}=1',content:'① \\lim_{x→0}(sin x)/x = 1；② \\lim_{x→∞}(1+1/x)^x = e。'},
+      {type:'kp',chapter:'第二章 导数与微分',title:'洛必达法则',cat:'必备',priority:'高频',content:'0/0 或 ∞/∞ 型未定式可用洛必达法则求极限。'},
+      {type:'wrong',chapter:'第三章 中值定理',q:'证明 f(x) 在 [a,b] 上满足拉格朗日中值定理。',myAnswer:'不会',correct:'构造辅助函数 F(x)=f(x)-...，验证满足罗尔定理条件。',reason:'没记住辅助函数构造法',date:'2026-08-05'}
+    ]},null,2);
+  }
+  function importMKp(it){
+    if(!it.title) return 'bad';
+    var fw=getFw();
+    // 全局去重：任一章节已有同标题知识点则跳过（避免与基础框架重复、或重复建同名章）
+    var dup=false; fw.chapters.forEach(function(c){ (c.points||[]).forEach(function(p){ if(p.title===it.title) dup=true; }); });
+    if(dup) return 'skip';
+    var chName=it.chapter||'导入章节';
+    var ch=fw.chapters.filter(function(c){return c.name===chName;})[0];
+    if(!ch){ ch={name:chName, cnNum:'', points:[]}; fw.chapters.push(ch); }
+    var maxIdx=0; fw.chapters.forEach(function(c){ (c.points||[]).forEach(function(p){ if(p.idx>maxIdx) maxIdx=p.idx; }); });
+    ch.points.push({idx:maxIdx+1, title:it.title, cat:it.cat||'笔记', priority:it.priority||'基础', level:'1', isEssay:false, latex:it.latex||'', content:it.content||'', explain:'', img:'', detail:''});
+    saveFw(fw); return 'ok';
+  }
+  function importMWrong(it){
+    if(!it.q) return 'bad';
+    var a=getWrong();
+    if(a.some(function(r){return r.q===it.q;})) return 'skip';
+    a.push({wid:'wr_'+Date.now()+'_'+Math.floor(Math.random()*9999), kind:'manual', status:'pending', q:it.q||'', myAns:it.myAnswer||'', correct:it.answer||'', ch:it.chapter||'', reason:it.reason||'', date:it.date||todayStr(), ts:Date.now(), img:''});
+    saveWrong(a); return 'ok';
+  }
+  function importMItem(it){
+    if(it.type==='raw'){ it.type='kp'; if(!it.title) it.title='导入原文'; }
+    if(it.type==='kp') return importMKp(it);
+    if(it.type==='wrong') return importMWrong(it);
+    return 'bad';
+  }
+  function runIntake(){
+    var ta=document.getElementById('intakeText'); var msg=document.getElementById('intakeMsg');
+    var raw=(ta.value||'').trim(); if(!raw){ msg.style.color='#c62828'; msg.textContent='❌ 请先粘贴 JSON 或选择文件。'; return; }
+    var data; try{ data=JSON.parse(raw); }catch(e){ msg.style.color='#c62828'; msg.textContent='❌ JSON 解析失败：'+e.message; return; }
+    if(!data||!Array.isArray(data.items)){ msg.style.color='#c62828'; msg.textContent='❌ 格式错误：顶层需含 items 数组。'; return; }
+    if(data.subject&&data.subject!=='高数'){ msg.style.color='#c62828'; msg.textContent='⚠️ 本页是高数，但 JSON 的 subject='+data.subject+'，已跳过（请到对应科目页导入）。'; return; }
+    var ok=0,skip=0,bad=0;
+    (data.items||[]).forEach(function(it){
+      try{ if(!it||!it.type){ bad++; return; } var r=importMItem(it); if(r==='ok') ok++; else if(r==='skip') skip++; else bad++; }catch(e){ bad++; }
+    });
+    msg.style.color='#2e7d32';
+    msg.textContent='✅ 导入完成：新增 '+ok+' 条，跳过重复 '+skip+' 条，无效 '+bad+' 条。知识点→知识框架（对应章节）；错题→错题集。';
+    renderFw(); if(document.getElementById('wrongView')) renderWrong(); updateWrongBadge();
+  }
+  var ib=document.getElementById('intakeBtn'); if(ib) ib.onclick=function(){ openIntake(); };
+  var ic=document.getElementById('intakeClose'); if(ic) ic.onclick=function(){ closeIntake(); };
+  setupIntakeModalClose();
+  var ir=document.getElementById('intakeRun'); if(ir) ir.onclick=function(){ runIntake(); };
+  var ifile=document.getElementById('intakeFile');
+  if(ifile) ifile.addEventListener('change', function(){
+    var f=ifile.files&&ifile.files[0]; if(!f) return;
+    var ext=(f.name.split('.').pop()||'').toLowerCase();
+    var msg=document.getElementById('intakeMsg'); var prev=document.getElementById('intakePreview');
+    if(prev) prev.innerHTML='';
+    if(ext==='json'){ var r=new FileReader(); r.onload=function(){ var ta=document.getElementById('intakeText'); if(ta) ta.value=r.result; runIntake(); }; r.readAsText(f); ifile.value=''; return; }
+    if(msg){ msg.style.color='#1565c0'; msg.textContent='⏳ 正在读取并提取文字（PDF/Word 首次需加载解析库，稍候）…'; }
+    if(!window.DocIntake){ if(msg){msg.style.color='#c62828';msg.textContent='❌ 文档解析模块未加载（doc_intake.js）';} ifile.value=''; return; }
+    window.DocIntake.readFile(f).then(function(res){
+      if(msg) msg.textContent='';
+      var items=window.DocIntake.split(res.text, '高数');
+      window.DocIntake.render(prev, items, { subject:'高数', onCommit:commitIntake, onRaw:function(){ commitRaw(res.text, f.name); } });
+    }).catch(function(err){ if(msg){ msg.style.color='#c62828'; msg.textContent='❌ 读取失败：'+((err&&err.message)||err); } });
+    ifile.value='';
+  });
+  function commitIntake(items){
+    var ok=0,skip=0,bad=0;
+    items.forEach(function(it){ try{ var r=importMItem(it); if(r==='ok') ok++; else if(r==='skip') skip++; else bad++; }catch(e){ bad++; } });
+    var msg=document.getElementById('intakeMsg'); if(msg){ msg.style.color='#2e7d32'; msg.textContent='✅ 文档导入完成：新增 '+ok+' 条，跳过重复 '+skip+' 条，无效 '+bad+' 条。'; }
+    renderFw(); if(document.getElementById('wrongView')) renderWrong(); updateWrongBadge();
+  }
+  function commitRaw(text, name){
+    var r=importMItem({type:'kp', chapter:'导入文档', title:(name||'导入文档').replace(/\.[^.]+$/,'')||'导入原文', content:text});
+    var msg=document.getElementById('intakeMsg'); if(msg){ msg.style.color='#2e7d32'; msg.textContent=(r==='ok'?'✅ 已整篇存入「导入文档」知识点：':'⚠️ 整篇导入：')+(name||''); }
+    renderFw();
+  }
+  var iie=document.getElementById('intakeExample'); if(iie) iie.onclick=function(){ intakeExample(); };
+
+  // ===================== 初始化 =====================
+  var sb=document.getElementById('syncBtn'); if(sb) sb.onclick=openSync;
+  var sc=document.getElementById('syncClose'); if(sc) sc.onclick=closeSync;
+  var se=document.getElementById('syncExport'); if(se) se.onclick=syncExport;
+  var si=document.getElementById('syncImport'); if(si) si.onclick=function(){ var f=document.getElementById('syncFile'); if(f) f.click(); };
+  var sf=document.getElementById('syncFile'); if(sf) sf.onchange=function(){ if(sf.files&&sf.files[0]) syncImport(sf.files[0]); sf.value=''; };
+
+  // 侧边栏移动端开合
+  var menuBtn=document.getElementById('menuBtn'), sidebar=document.getElementById('sidebar'), scrim=document.getElementById('scrim');
+  if(menuBtn) menuBtn.onclick=function(){ sidebar.classList.toggle('open'); scrim.classList.toggle('show'); };
+  if(scrim) scrim.onclick=function(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); };
+
+  // 标签切换
+  Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function(b){
+    b.onclick=function(){
+      var t=b.dataset.tab;
+      document.querySelectorAll('.tabs button').forEach(function(x){ x.classList.toggle('active', x===b); });
+      document.getElementById('fwView').style.display = t==='fw'?'block':'none';
+      document.getElementById('wrongView').style.display = t==='wrong'?'block':'none';
+      if(t==='wrong') renderWrong(); else renderFw();
+    };
+  });
+
+  // 初始渲染（defer 数据脚本后，等 DOMContentLoaded 保证数据已就绪，避免首屏白屏/闪烁）
+  function boot(){
+    var sk=document.getElementById('bootSkel'); if(sk) sk.remove();
+    POL = window.POLITICS;
+    if(!POL){ document.getElementById('fwMain').innerHTML='<div class="fw-empty">框架数据未加载（math_data.js）。</div>'; }
+    renderFw();
+    updateWrongBadge();
+    var c=document.querySelector('.content'); if(c){ c.style.opacity='0'; requestAnimationFrame(function(){ c.style.transition='opacity .35s ease'; c.style.opacity='1'; }); }
+  }
+  if(document.readyState!=='loading'){ boot(); } else { document.addEventListener('DOMContentLoaded', boot); }
+})();
+</script>
+  <script src="brand.js"></script>
+</body>
+</html>

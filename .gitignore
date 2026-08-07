@@ -1,0 +1,15 @@
+# 部署产物与旧部署目录
+_deploy_all_v6/
+_deploy_computer/
+_deploy_meal/
+
+# 调试/生成脚本与临时文件
+_tech/
+.validate_plan.html
+nul
+_trash/
+_ocr/
+
+# 用户个人资料库（含 PDF 等上传资料）
+资料库/
+_intake/
