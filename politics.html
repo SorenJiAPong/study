@@ -2036,7 +2036,6 @@ window.addEventListener('error', function(e){
     function q_type(day,i){ return day.mcq[i].type; }
     function checkMCQ(day, i){
       var q=day.mcq[i]; var card=document.getElementById('mcq'+i); var rev=document.getElementById('rev'+i);
-      var rel = renderKpRel(q, day);
       var letters=['A','B','C','D','E','F'];
       var expRows='';
       (q.options||[]).forEach(function(o,oi){
@@ -2045,7 +2044,7 @@ window.addEventListener('error', function(e){
         expRows += '<div class="opt-exp '+(isAns?'ok':'no')+'"><span class="lab">'+letters[oi]+'</span><span class="tx">'+esc(e)+'</span></div>';
       });
       if(!q.answer){
-        rev.innerHTML = '<b>答案：暂缺</b> ｜ 该题原资料未标注正确选项，请参考《'+esc(q.set||q.source||'')+'》。<div class="kp-rel"><b>📌 相关知识点</b><ul>'+rel+'</ul></div>';
+        rev.innerHTML = '<b>答案：暂缺</b> ｜ 该题原资料未标注正确选项，请参考《'+esc(q.set||q.source||'')+'》。';
         rev.style.display='block'; updateProg(day); return;
       }
       var sel=Array.prototype.map.call(card.querySelectorAll('.mcq-opt.sel'), function(x){return parseInt(x.dataset.o,10);});
@@ -2057,7 +2056,6 @@ window.addEventListener('error', function(e){
       });
       var txt = '<div style="margin-bottom:6px"><b>答案：'+q.answer+'</b> ｜ '+(ok?'✅ 答对了':'❌ 再想想')+'</div>';
       txt += '<div class="mcq-reveal-in">'+expRows+'</div>';
-      txt += '<div class="kp-rel"><b>📌 相关知识点</b><ul>'+rel+'</ul></div>';
       rev.innerHTML = txt; rev.style.display='block';
       updateProg(day);
       if(!ok && q.answer){
