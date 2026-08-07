@@ -839,7 +839,7 @@ window.addEventListener('error', function(e){
         var mustPts = pts.filter(function(p){ return p.pri==='必考'; });
         var keyIds = keyPts.map(function(p){ return p.idx; });
         var mustIds = mustPts.map(function(p){ return p.idx; });
-        var MAX_KEY=5, MAX_TOTAL=11, MAX_REV=6;
+        var MAX_KEY=3, MAX_TOTAL=7, MAX_REV=4;
         var days=[];
         function newDay(ph){ return {ph:ph, l:[], r:[], datiCh:'', jiantiCh:''}; }
         function chOf(id){ return idxCh[id]||''; }
@@ -880,15 +880,16 @@ window.addEventListener('error', function(e){
             days.push(d);
           }
         }
-        reviewRound('二刷', keyIds, 3);
+        reviewRound('二刷', pts.map(function(p){ return p.idx; }), 5);
         // ===== Round 3: 三刷（必考精复习）=====
-        reviewRound('三刷', mustIds, 3);
+        reviewRound('三刷', pts.map(function(p){ return p.idx; }), 5);
         // ===== Round 4: 冲刺（轮换重点背 + 大题/简答巩固，铺到 2027-03-31）=====
-        var TARGET=238, si=0;
+        var TARGET=210, si=0;
+        var allIds = pts.map(function(p){ return p.idx; });
         while(days.length < TARGET){
           var d=newDay('冲刺'), chunk=[];
-          for(var k=0;k<4 && si<keyIds.length;k++){ chunk.push(keyIds[si]); si++; }
-          if(si>=keyIds.length) si=0; // 重点背循环复习
+          for(var k=0;k<4 && si<allIds.length;k++){ chunk.push(allIds[si]); si++; }
+          if(si>=allIds.length) si=0; // 全部考点循环滚动复习
           d.r = chunk;
           days.push(d);
         }
@@ -1981,13 +1982,31 @@ window.addEventListener('error', function(e){
       });
       return items;
     }
-    function pickZhVoice(){
-      if(!window.speechSynthesis) return null;
+    function zhVoices(){
+      if(!window.speechSynthesis) return [];
       var vs = speechSynthesis.getVoices()||[];
-      var zh = vs.filter(function(v){ return /zh|chinese|中文|普通话|Han|Yue|晓|云|Hui|Kangkang/i.test(v.lang+' '+v.name); });
-      if(zh.length) return zh[0];
-      var anyCn = vs.filter(function(v){ return /zh|cn/i.test(v.lang); });
-      return anyCn.length? anyCn[0] : null;
+      var zh = vs.filter(function(v){ return /zh|cn/i.test(v.lang) || /中文|普通话|Chinese/i.test(v.name); });
+      return zh.length ? zh : vs;
+    }
+    function isFemaleVoice(v){ return v && !/kang|康|male|男/i.test(v.name) && /(xiao|yao|hui|yi|yun|yaoyao|云希|晓|瑶|慧|伊|雅|妍|女)/i.test(v.name); }
+    function fillVoices(){
+      var sel = document.getElementById('speechVoice'); if(!sel) return;
+      if(!window.speechSynthesis) return;
+      var zh = zhVoices();
+      if(!zh.length){ try{ speechSynthesis.onvoiceschanged = function(){ speechSynthesis.onvoiceschanged=null; fillVoices(); }; }catch(e){} return; }
+      var prev = sel.value;
+      sel.innerHTML = zh.map(function(v,i){ return '<option value="'+i+'">'+esc(v.name+' · '+v.lang)+'</option>'; }).join('');
+      var def = zh.findIndex(isFemaleVoice);
+      if(prev!=='' && zh[parseInt(prev,10)]) sel.value = prev;
+      else sel.value = String(def<0?0:def);
+    }
+    function curVoice(){
+      var zh = zhVoices();
+      if(!zh.length) return null;
+      var sel = document.getElementById('speechVoice');
+      if(sel && sel.value!==''){ var vi=parseInt(sel.value,10); if(zh[vi]) return zh[vi]; }
+      var def = zh.filter(isFemaleVoice);
+      return def.length ? def[0] : zh[0];
     }
     function updateSpeechBtn(){ var b=document.getElementById('speechBtn'); if(b) b.textContent = speechPlaying? '⏹ 停止朗诵' : '🔊 开始朗诵'; }
     function stopDaySpeech(){ speechPlaying=false; try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} updateSpeechBtn(); }
@@ -2006,7 +2025,7 @@ window.addEventListener('error', function(e){
           if(i>=items.length) i=0;
           var u=new SpeechSynthesisUtterance(items[i]);
           u.lang='zh-CN';
-          var v=pickZhVoice(); if(v) u.voice=v;
+          var v=curVoice(); if(v) u.voice=v;
           u.rate=0.95; u.pitch=1.0;
           u.onend=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
           u.onerror=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
@@ -2021,7 +2040,7 @@ window.addEventListener('error', function(e){
     }
     function renderKP(box, day){
       var mod = day.modName || (POL.modules[day.mod-1] && POL.modules[day.mod-1].name) || '本章';
-      var h = '<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:10px"><button id="speechBtn" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">🔊 开始朗诵</button><span style="color:var(--gray);font-size:12.5px">循环朗读今日必背知识点（中文语音，可后台播放）</span></div>';
+      var h = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:10px"><button id="speechBtn" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">🔊 开始朗诵</button><select id="speechVoice" title="选择朗读音色" style="padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:13px;max-width:230px"></select><span style="color:var(--gray);font-size:12.5px">循环朗读今日必背知识点（可换音色，可后台播放）</span></div>';
       h += '<div class="plan-tip">Day '+curDay+' · 下列知识点均来自考纲模块【'+esc(mod)+'】。先背熟，再去「选择题」用题检验、去「大题」练输出。</div>';
       h += '<div class="kp-ch">📖 本章：'+esc(mod)+'（共 '+day.keypoints.length+' 个知识点）</div>';
       h += '<div class="kp-list">';
@@ -2047,6 +2066,7 @@ window.addEventListener('error', function(e){
       });
       h += '</details>';
       box.innerHTML = h;
+      fillVoices();
       var sb = document.getElementById('speechBtn');
       if(sb) sb.onclick = function(){ startDaySpeech(); };
       Array.prototype.forEach.call(box.querySelectorAll('.kp-click'), function(el){
