@@ -216,8 +216,9 @@ window.addEventListener('error', function(e){
 <!-- 政治题库：IndexedDB 本地缓存，首次下载后存本地，之后（含硬刷新）秒开；失败回退网络下载 -->
 <script>
 (function(){
-  var POL_DATA_FILE = 'politics_data.js';
-  var DB_NAME = 'pol_cache_db', STORE = 'kv', KEY = 'POLITICS';
+  var CACHE_VER = '20260807a';
+  var POL_DATA_FILE = 'politics_data.js?v=' + CACHE_VER;
+  var DB_NAME = 'pol_cache_db', STORE = 'kv', KEY = 'POLITICS_' + CACHE_VER;
   function idbOpen(){
     return new Promise(function(res,rej){
       var r = indexedDB.open(DB_NAME, 1);
