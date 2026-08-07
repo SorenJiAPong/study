@@ -959,13 +959,67 @@ window.addEventListener('error', function(e){
     function buildDayMcq(n){
       var pool = POL.mcqPool || [];
       if(!pool.length) return [];
-      var rng = mulberry32((n * 2654435761) >>> 0);
-      var arr = pool.slice();
-      for(var i=arr.length-1;i>0;i--){
-        var j = Math.floor(rng() * (i+1));
-        var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+      var sp = (POL.studyPlan && POL.studyPlan[n-1]) || {l:[], r:[]};
+      var dayIdx = sp.l.concat(sp.r);
+      var topicSet = {};
+      dayIdx.forEach(function(idx){
+        var p = fwById[idx];
+        if(p && p.title){ topicSet[p.title.replace(/\s/g,'')] = true; }
+        var ch = fwChapterOf[idx];
+        if(ch){ topicSet[ch.replace(/\s/g,'')] = true; }
+      });
+      var topicKeys = Object.keys(topicSet).filter(function(k){ return k.length>=2; });
+      function scoreByTopics(q){
+        if(!q || !q.kp || !topicKeys.length) return 0;
+        var tag = String(q.kp).replace(/\s/g,'');
+        var s = 0;
+        topicKeys.forEach(function(k){ if(tag.indexOf(k)>=0) s += k.length; });
+        return s;
       }
-      return arr.slice(0, Math.min(20, arr.length));
+      var scored = pool.map(function(q){ return {q:q, s:scoreByTopics(q)}; });
+      var matched = scored.filter(function(x){ return x.s>0; });
+      var unmatched = scored.filter(function(x){ return x.s===0; });
+      var rng = mulberry32((n * 2654435761) >>> 0);
+      function shuffle(arr){ for(var i=arr.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; } return arr; }
+      matched = shuffle(matched); unmatched = shuffle(unmatched);
+      return matched.concat(unmatched).slice(0, Math.min(20, pool.length)).map(function(x){ return x.q; });
+    }
+    function cleanKpName(s){ return (s||'').replace(/[（(].*?[）)]/g,'').replace(/\s|第[一二三四五六七八九十\d]+章\s*/g,'').trim(); }
+    function findMcqKpForQ(q){
+      if(!q || !q.kp || !POL.mcqKp || !POL.mcqKp.length) return null;
+      var tag = String(q.kp), m = tag.match(/【(.+?)】/);
+      var chName = m ? m[1] : tag;
+      var subName = m ? tag.slice(m[0].length).trim() : '';
+      var chClean = cleanKpName(chName);
+      var subClean = cleanKpName(subName);
+      var best = null, bestScore = 0;
+      POL.mcqKp.forEach(function(k){
+        [k.ch, k.mod].forEach(function(c){
+          if(!c) return;
+          var cc = cleanKpName(c);
+          var score = 0;
+          if(cc === chClean || cc === subClean) score = 100;
+          else if((chClean && (cc.indexOf(chClean)>=0 || chClean.indexOf(cc)>=0)) || (subClean && (cc.indexOf(subClean)>=0 || subClean.indexOf(cc)>=0))) score = 50;
+          else if(chClean && chClean.length>=4){
+            for(var i=0;i<=chClean.length-4;i++){
+              var frag = chClean.slice(i,i+4);
+              if(frag.length>=3 && cc.indexOf(frag)>=0){ score = 25; break; }
+            }
+          }
+          if(score>bestScore){ bestScore=score; best=k; }
+        });
+      });
+      return best;
+    }
+    function renderKpRel(q, day){
+      var matched = findMcqKpForQ(q);
+      if(matched && matched.items && matched.items.length){
+        return matched.items.slice(0,5).map(function(it){
+          var t = (it.tip||'').trim();
+          return '<li><div>'+esc(it.pt||'')+'</div>'+(t?'<div style="color:#a86;font-size:12px;margin-top:2px">💡 '+esc(t)+'</div>':'')+'</li>';
+        }).join('');
+      }
+      return day.keypoints.slice(0,5).map(function(k){return '<li>'+esc(k.text)+'</li>';}).join('');
     }
     function dayOf(n){ return (POL.days && POL.days[n-1]) || synthDay(n); }
     function ptTitle(idx){ var p = fwById[idx]; return p ? ('【'+(p.level||'')+'】'+p.title) : ('点#'+idx); }
@@ -1982,7 +2036,7 @@ window.addEventListener('error', function(e){
     function q_type(day,i){ return day.mcq[i].type; }
     function checkMCQ(day, i){
       var q=day.mcq[i]; var card=document.getElementById('mcq'+i); var rev=document.getElementById('rev'+i);
-      var rel = day.keypoints.slice(0,5).map(function(k){return '<li>'+esc(k.text)+'</li>';}).join('');
+      var rel = renderKpRel(q, day);
       var letters=['A','B','C','D','E','F'];
       var expRows='';
       (q.options||[]).forEach(function(o,oi){

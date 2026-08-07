@@ -575,6 +575,8 @@ window.addEventListener('error', function(e){
             <option value="subj">主观题(简答+计算+应用)</option>
           </select>
           <button class="ghost" id="quizShuffle">🔀 随机出题</button>
+          <button class="ghost" id="quizToggleDone" title="切换是否显示已做过的题">隐藏已做</button>
+          <button class="ghost" id="quizResetDone" title="清空已做记录，开始二轮/三轮复习" style="color:#c62828">🔄 重置进度</button>
           <span class="quiz-prog" id="quizProg" style="margin-left:auto"></span>
         </div>
         <div id="quizMain"></div>
@@ -1348,15 +1350,26 @@ window.addEventListener('error', function(e){
   var quizPos = 0;
   var quizStat = { total:0, correct:0 };
   var quizCurCat = 'all', quizCurSubj = 'all';
+  var QUIZ_DONE_KEY='cs_quiz_done';
+  var quizShowDone=false;
+  function getQuizDone(){ try{ var s=localStorage.getItem(QUIZ_DONE_KEY); return s?JSON.parse(s):[]; }catch(e){ return []; } }
+  function saveQuizDone(arr){ try{ localStorage.setItem(QUIZ_DONE_KEY, JSON.stringify(arr||[])); }catch(e){} }
+  function quizQid(q){ return (q.q||'').trim()+'\u0001'+(q.ch||'')+'\u0001'+(q.subject||''); }
+  function isQuizDone(q){ return getQuizDone().indexOf(quizQid(q))>=0; }
+  function markQuizDone(q){ var id=quizQid(q), d=getQuizDone(); if(d.indexOf(id)<0){ d.push(id); saveQuizDone(d); } }
+  function clearQuizDone(){ saveQuizDone([]); }
+  function quizDoneStat(){ var done=getQuizDone(), total=quizPool.length; return {done:done.length, total:total, remain:total-done.length}; }
   function quizLoad(cat, subj){
     if(cat!=null) quizCurCat = cat;
     if(subj!=null) quizCurSubj = subj;
+    var done = getQuizDone();
     var pool = quizPool.filter(function(q){
       var typeOk = true;
       if(quizCurCat==='subj') typeOk = (q.type==='essay'||q.type==='calc'||q.type==='apply');
       else if(quizCurCat!=='all') typeOk = (q.type===quizCurCat);
       var subjOk = (quizCurSubj==='all' || q.subject===quizCurSubj);
-      return typeOk && subjOk;
+      var doneOk = quizShowDone || done.indexOf(quizQid(q))<0;
+      return typeOk && subjOk && doneOk;
     });
     quizOrder = pool.map(function(q){ return quizPool.indexOf(q); });
     quizPos = 0;
@@ -1378,7 +1391,14 @@ window.addEventListener('error', function(e){
     var main=document.getElementById('quizMain');
     var prog=document.getElementById('quizProg');
     if(!quizPool.length){ main.innerHTML='<div class="fw-empty">暂无题库。</div>'; return; }
-    prog.textContent='进度 '+(quizPos+1)+'/'+quizOrder.length+'　正确率 '+(quizStat.total?Math.round(quizStat.correct/quizStat.total*100):0)+'%';
+    var stat=quizDoneStat();
+    if(!quizOrder.length){
+      main.innerHTML='<div class="fw-empty">🎉 本轮题目已全部做完（已做 <b>'+stat.done+'</b> / 共 <b>'+stat.total+'</b> 题）。<br><br><button class="primary" id="quizResetBtn2" style="padding:8px 16px">🔄 重置进度，开始新一轮</button></div>';
+      prog.textContent='已做 '+stat.done+' / 共 '+stat.total;
+      document.getElementById('quizResetBtn2').onclick=function(){ appConfirm('确定清空已做记录？清空后所有题目会重新出现，可开始二轮/三轮复习。', function(){ clearQuizDone(); quizStat={total:0,correct:0}; quizLoad(null,null); }); };
+      return;
+    }
+    prog.innerHTML='进度 '+(quizPos+1)+'/'+quizOrder.length+'　正确率 '+(quizStat.total?Math.round(quizStat.correct/quizStat.total*100):0)+'%　已做 '+stat.done+' / 剩余 '+stat.remain;
     var q=quizPool[quizOrder[quizPos]];
     var h='<div class="quiz-card">';
     var isSubj = (q.type==='essay'||q.type==='calc'||q.type==='apply');
@@ -1410,6 +1430,7 @@ window.addEventListener('error', function(e){
       var fb=document.getElementById('qfb');
       if(isSubj){
         var myA=(document.getElementById('qessay').value||'').trim();
+        markQuizDone(q);
         var ansHtml='<b>参考答案：</b><br>'+esc(q.answer).replace(/\n/g,'<br>');
         if(q.explain) ansHtml+='<br><span style="color:#567">'+esc(q.explain)+'</span>';
         ansHtml+='<div class="crud-bar" style="margin-top:10px"><button id="qWrong">↳ 加入错题本</button></div>';
@@ -1433,6 +1454,7 @@ window.addEventListener('error', function(e){
         ok = (val===q.answer); userAns=val;
       }
       quizStat.total++; if(ok) quizStat.correct++;
+      markQuizDone(q);
       if(ok){ fb.className='quiz-fb ok'; fb.innerHTML='✅ 回答正确！<br><b>解析：</b>'+esc(q.explain); }
       else {
         var ansText = q.type==='single' ? (q.answer+'. '+q.options[q.answer.charCodeAt(0)-65]) : (q.type==='judge'? q.answer : q.answer);
@@ -1457,6 +1479,15 @@ window.addEventListener('error', function(e){
   document.getElementById('quizCat').onchange=function(e){ quizLoad(e.target.value, null); };
   document.getElementById('quizSubj').onchange=function(e){ quizLoad(null, e.target.value); };
   document.getElementById('quizShuffle').onclick=quizShuffle;
+  var quizToggleBtn=document.getElementById('quizToggleDone');
+  if(quizToggleBtn){
+    quizToggleBtn.textContent=quizShowDone?'显示全部':'隐藏已做';
+    quizToggleBtn.onclick=function(){ quizShowDone=!quizShowDone; this.textContent=quizShowDone?'显示全部':'隐藏已做'; quizLoad(null,null); };
+  }
+  var quizResetBtn=document.getElementById('quizResetDone');
+  if(quizResetBtn){
+    quizResetBtn.onclick=function(){ appConfirm('确定清空已做记录？清空后所有题目会重新出现，相当于开始二轮/三轮复习。', function(){ clearQuizDone(); quizStat={total:0,correct:0}; quizLoad(null,null); }); };
+  }
 
   // ===================== 每日计划（仿政治页：日历 + 记忆任务卡）=====================
   var planCurDay = 1, planCalY, planCalM;
