@@ -1169,7 +1169,7 @@ window.addEventListener('error', function(e){
         });
       });
       Array.prototype.forEach.call(box.querySelectorAll('.pc-go'), function(b){
-        b.addEventListener('click', function(){ curTab=b.dataset.gotab; applyMode(); renderDatebar(); renderContent(); var m=document.querySelector('.pol-main'); if(m) m.scrollTop=0; });
+        b.addEventListener('click', function(){ stopDaySpeech(); curTab=b.dataset.gotab; applyMode(); renderDatebar(); renderContent(); var m=document.querySelector('.pol-main'); if(m) m.scrollTop=0; });
       });
     }
 
@@ -1966,9 +1966,63 @@ window.addEventListener('error', function(e){
       });
     }
 
+    /* ---------- 每日必背 · 朗诵（循环朗读，浏览器内置中文语音） ---------- */
+    var speechPlaying = false;
+    function stripHtml(s){ var d=document.createElement('div'); d.innerHTML=s||''; return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim(); }
+    function collectDaySpeech(){
+      var day = dayOf(curDay);
+      var items=[];
+      (day.keypoints||[]).forEach(function(k){
+        var title = k.text||'';
+        var body='';
+        if(k.idx){ var p=fwById[k.idx]; if(p) body=p.content||''; }
+        var txt = title + (body? ('。'+stripHtml(body)) : '');
+        if(txt.trim()) items.push(txt.trim());
+      });
+      return items;
+    }
+    function pickZhVoice(){
+      if(!window.speechSynthesis) return null;
+      var vs = speechSynthesis.getVoices()||[];
+      var zh = vs.filter(function(v){ return /zh|chinese|中文|普通话|Han|Yue|晓|云|Hui|Kangkang/i.test(v.lang+' '+v.name); });
+      if(zh.length) return zh[0];
+      var anyCn = vs.filter(function(v){ return /zh|cn/i.test(v.lang); });
+      return anyCn.length? anyCn[0] : null;
+    }
+    function updateSpeechBtn(){ var b=document.getElementById('speechBtn'); if(b) b.textContent = speechPlaying? '⏹ 停止朗诵' : '🔊 开始朗诵'; }
+    function stopDaySpeech(){ speechPlaying=false; try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} updateSpeechBtn(); }
+    function startDaySpeech(){
+      if(!window.speechSynthesis){ alert('当前浏览器不支持语音朗读，请换 Chrome / Edge 试试。'); return; }
+      if(speechPlaying){ stopDaySpeech(); return; }
+      var items = collectDaySpeech();
+      if(!items.length){ alert('今日暂无可朗读的背诵内容。'); return; }
+      speechPlaying = true; updateSpeechBtn();
+      try{ speechSynthesis.cancel(); }catch(e){}
+      var started=false;
+      function begin(){
+        var i=0;
+        function speakNext(){
+          if(!speechPlaying) return;
+          if(i>=items.length) i=0;
+          var u=new SpeechSynthesisUtterance(items[i]);
+          u.lang='zh-CN';
+          var v=pickZhVoice(); if(v) u.voice=v;
+          u.rate=0.95; u.pitch=1.0;
+          u.onend=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
+          u.onerror=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
+          try{ speechSynthesis.speak(u); }catch(e){ speechPlaying=false; updateSpeechBtn(); }
+        }
+        speakNext();
+      }
+      if(speechSynthesis.getVoices().length===0){
+        speechSynthesis.onvoiceschanged=function(){ if(started) return; started=true; begin(); };
+        setTimeout(function(){ if(!started && speechPlaying){ started=true; begin(); } }, 1500);
+      } else { started=true; begin(); }
+    }
     function renderKP(box, day){
       var mod = day.modName || (POL.modules[day.mod-1] && POL.modules[day.mod-1].name) || '本章';
-      var h = '<div class="plan-tip">Day '+curDay+' · 下列知识点均来自考纲模块【'+esc(mod)+'】。先背熟，再去「选择题」用题检验、去「大题」练输出。</div>';
+      var h = '<div style="display:flex;align-items:center;gap:10px;margin:4px 0 12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:10px"><button id="speechBtn" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">🔊 开始朗诵</button><span style="color:var(--gray);font-size:12.5px">循环朗读今日必背知识点（中文语音，可后台播放）</span></div>';
+      h += '<div class="plan-tip">Day '+curDay+' · 下列知识点均来自考纲模块【'+esc(mod)+'】。先背熟，再去「选择题」用题检验、去「大题」练输出。</div>';
       h += '<div class="kp-ch">📖 本章：'+esc(mod)+'（共 '+day.keypoints.length+' 个知识点）</div>';
       h += '<div class="kp-list">';
       day.keypoints.forEach(function(k,idx){
@@ -1993,6 +2047,8 @@ window.addEventListener('error', function(e){
       });
       h += '</details>';
       box.innerHTML = h;
+      var sb = document.getElementById('speechBtn');
+      if(sb) sb.onclick = function(){ startDaySpeech(); };
       Array.prototype.forEach.call(box.querySelectorAll('.kp-click'), function(el){
         el.addEventListener('click', function(){
           var idx = parseInt(el.dataset.idx,10);
@@ -3067,7 +3123,7 @@ window.addEventListener('error', function(e){
     document.getElementById('calNext').addEventListener('click', function(){ calM++; if(calM>11){calM=0;calY++;} renderCalendar(); });
     document.getElementById('calToday').addEventListener('click', function(){ calY=TODAY.getFullYear(); calM=TODAY.getMonth(); curDay=dayNumFromDate(TODAY); renderCalendar(); renderDatebar(); renderContent(); });
     Array.prototype.forEach.call(document.querySelectorAll('#polTabs button'), function(b){
-      b.addEventListener('click', function(){ if(!b.dataset.pt) return; curTab=b.dataset.pt; applyMode(); renderDatebar(); renderContent(); });
+      b.addEventListener('click', function(){ if(!b.dataset.pt) return; stopDaySpeech(); curTab=b.dataset.pt; applyMode(); renderDatebar(); renderContent(); });
     });
 
     /* ---------- 文档摄入：用户导入的选择题并入每日抽考题库 ---------- */
