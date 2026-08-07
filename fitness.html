@@ -60,7 +60,7 @@ window.addEventListener('error', function(e){
     background:var(--cream);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
   }
   .menu-btn{display:none;background:var(--ink);color:#fff;border:0;width:38px;height:38px;border-radius:10px;font-size:18px;cursor:pointer}
-  .fit-bk-btn{margin-left:auto;background:var(--terra);color:#fff;border:0;padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .fit-bk-btn{background:var(--terra);color:#fff;border:0;padding:7px 13px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
   .fit-bk-btn:hover{filter:brightness(.95)}
   .fit-bk-info{font-size:11px;color:var(--gray);margin-left:4px;white-space:nowrap}
   .topbar h1{font-size:18px;font-weight:700}
@@ -192,7 +192,7 @@ window.addEventListener('error', function(e){
     <div class="topbar">
       <button class="menu-btn" id="menuBtn">☰</button>
       <h1>🏋️ 居家哑铃健身</h1>
-      <button class="fit-bk-btn" id="fitExportBtn" title="备份全部进度（含健身打卡）">📦 备份</button>
+      <button class="fit-bk-btn" id="fitExportBtn" title="备份全部进度（含健身打卡）" style="margin-left:auto;margin-right:8px">📦 备份</button>
       <button class="fit-bk-btn" id="fitImportBtn" title="从备份文件恢复">📥 导入</button>
       <input type="file" id="fitImportFile" accept="application/json" style="display:none">
       <span id="fitBackupInfo" class="fit-bk-info"></span>

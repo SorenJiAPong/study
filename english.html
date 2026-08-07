@@ -593,7 +593,7 @@ window.addEventListener('error', function(e){
 
     // 合并：基础分类 + 用户分类（按 cat 归并，用户在前的独立块）
     function mineSection(){
-      if(!userGrammar.length) return '<div class="muted" style="margin:6px 0 14px">还没有自己添加的语法。点右上角「➕ 我的语法」补上你遇到的考点（可新建分类，也可并入已有分类）。</div>';
+      if(!userGrammar.length) return '';
       var h='<div class="card mine-box" style="margin-bottom:16px"><div class="mine-h">📌 我的语法 ('+userGrammar.length+')</div>';
       userGrammar.forEach(function(cf,i){
         h+='<div style="margin:8px 0;padding:8px 10px;border-left:3px solid #e07856;background:#fff7f2">'+
@@ -663,7 +663,7 @@ window.addEventListener('error', function(e){
   // 短语搭配（顶部独立"我添加的"专区；基础库不混入用户条目；分批渲染）
   function renderPhrases(){
     function mineSection(){
-      if(!userPhrases.length) return '<div class="muted" style="margin:6px 0 14px">还没有自己添加的短语。点右上角「➕ 我的短语」加上你遇到的搭配。</div>';
+      if(!userPhrases.length) return '';
       var h='<div class="card mine-box" style="margin-bottom:16px"><div class="mine-h">📌 我添加的短语 ('+userPhrases.length+')</div>';
       userPhrases.forEach(function(p,i){
         var key='phrases:u:'+p.id;
@@ -823,7 +823,7 @@ window.addEventListener('error', function(e){
   // 复现替换专题（同义复现 + 近义替换）——支持用户自增改，顶部独立"我添加的"专区
   function renderRestate(){
     function mineSection(){
-      if(!userRestate.length) return '<div class="muted" style="margin:6px 0 14px">还没有自己添加的复现/替换例子。点下面「➕ 添加复现/替换条目」随手记。</div>';
+      if(!userRestate.length) return '';
       var h='<div class="card mine-box" style="margin-bottom:16px"><div class="mine-h">📌 我添加的复现/替换 ('+userRestate.length+')</div>';
       userRestate.forEach(function(it,i){ h+=restateItemHtml(it, 'restate:u:'+i, true, i); });
       return h+'</div>';
@@ -861,7 +861,7 @@ window.addEventListener('error', function(e){
   // 易混词（支持用户自增，顶部独立"我的易混词"专区）
   function renderConfusables(){
     function mineSection(){
-      if(!userConf.length) return '<div class="muted" style="margin:6px 0 14px">还没有自己添加的易混词。点下面「➕ 添加易混词」补上你常混的词。</div>';
+      if(!userConf.length) return '';
       var h='<div class="card mine-box" style="margin-bottom:14px"><div class="mine-h">📌 我的易混词 ('+userConf.length+')</div>';
       userConf.forEach(function(cf,i){
         var gkey='uc:'+i;
