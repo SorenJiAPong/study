@@ -548,7 +548,7 @@ window.addEventListener('error', function(e){
   /* ===== 健身页数据安全 / 自动备份（与四科页统一：duban_backup） ===== */
   (function(){
     var SCHEMA_VER=1;
-    var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','life_','fit_'];
+    var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','life_','fit_','brand'];
     var HAS_FSA=('showSaveFilePicker' in window);
     var _FS_DB='_dubanFS',_FS_STORE='h',_FS_K='bk';
     function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}

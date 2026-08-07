@@ -3045,7 +3045,7 @@ window.addEventListener('error', function(e){
 
     /* ---------- 数据安全 / 错误隔离（审计报告 #2#3#4#5） ---------- */
     var SCHEMA_VER = 1;
-    var BK_PREFIXES = ['pol_','eng_','math_','cs_','english_','oral_','fit_'];
+    var BK_PREFIXES = ['pol_','eng_','math_','cs_','english_','oral_','life_','fit_','brand'];
     function openSync(){ var m=document.getElementById('syncModal'); if(m) m.style.display='flex'; showLastBackup('lastBackupInfo'); }
     function closeSync(){ var m=document.getElementById('syncModal'); if(m) m.style.display='none'; }
     function backupAllKeys(){ var ks=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k && BK_PREFIXES.some(function(p){return k.indexOf(p)===0;})) ks.push(k); } return ks; }

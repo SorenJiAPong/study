@@ -47,9 +47,16 @@
     var el=document.getElementById('brandAvatar');
     if(el) el.style.backgroundImage='url("'+url+'")';
   }
+  function readCustom(){
+    /* 值以 JSON 字符串形式存储，便于纳入统一备份/导入；兼容早期存的裸 dataURL */
+    var raw=null;
+    try{ raw=localStorage.getItem(KEY); }catch(e){ return null; }
+    if(!raw) return null;
+    if(raw.charAt(0)==='"'){ try{ return JSON.parse(raw); }catch(e){ return raw; } }
+    return raw;
+  }
   function render(){
-    var custom=null;
-    try{ custom=localStorage.getItem(KEY); }catch(e){}
+    var custom=readCustom();
     setAvatar(custom || avatars[daySeed()%avatars.length]);
     var qe=document.getElementById('brandQuote');
     if(qe) qe.textContent=quotes[daySeed()%quotes.length];
@@ -78,7 +85,7 @@
           ctx.clip();
           ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
           var data=canvas.toDataURL('image/png');
-          try{ localStorage.setItem(KEY, data); }catch(err){}
+          try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(err){}
           setAvatar(data);
         };
         img.src=e.target.result;

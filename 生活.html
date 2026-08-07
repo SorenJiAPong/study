@@ -41182,7 +41182,7 @@ if(window.self!==window.top){
   }
   async function resetBackupPath(){ await _fsDel(); }
   var SCHEMA_VER=1;
-  var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','life_','fit_'];
+  var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','life_','fit_','brand'];
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function backupAllKeys(){ var ks=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k && BK_PREFIXES.some(function(p){return k.indexOf(p)===0;})) ks.push(k); } return ks; }
   function buildBackup(){ var data={__app:'duban_backup',ver:SCHEMA_VER,ts:new Date().toISOString(),store:{}}; backupAllKeys().forEach(function(k){ try{ data.store[k]=JSON.parse(localStorage.getItem(k)); }catch(e){ data.store[k]=localStorage.getItem(k); } }); return data; }

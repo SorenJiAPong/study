@@ -1950,7 +1950,7 @@ window.addEventListener('error', function(e){
     }catch(e){ if(e&&e.name==='AbortError') return 'cancel'; return 'download'; }
   }
   async function resetBackupPath(){ await _fsDel(); }
-  var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','fit_'];
+  var BK_PREFIXES=['pol_','eng_','math_','cs_','english_','oral_','life_','fit_','brand'];
   function openSync(){ document.getElementById('syncModal').style.display='flex'; showLastBackup('lastBackupInfo'); }
   function closeSync(){ document.getElementById('syncModal').style.display='none'; }
   function backupAllKeys(){ var ks=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k && BK_PREFIXES.some(function(p){return k.indexOf(p)===0;})) ks.push(k); } return ks; }
