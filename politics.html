@@ -1985,95 +1985,33 @@ window.addEventListener('error', function(e){
       });
       return items;
     }
-    function zhVoices(){
-      if(!window.speechSynthesis) return [];
-      var vs = speechSynthesis.getVoices()||[];
-      var zh = vs.filter(function(v){ return /zh|cn/i.test(v.lang) || /中文|普通话|Chinese/i.test(v.name); });
-      return zh.length ? zh : vs;
-    }
-    function isFemaleVoice(v){ return v && !/kang|康|male|男/i.test(v.name) && /(xiao|yao|hui|yi|yun|yaoyao|云希|晓|瑶|慧|伊|雅|妍|女)/i.test(v.name); }
-    function pickXiaoxiao(){
-      var zh = zhVoices();
-      return zh.find(function(v){ return /xiaoxiao|晓晓/i.test(v.name); }) || null;
-    }
-    function isGentle(){
-      var sel = document.getElementById('speechVoice');
-      return !!(sel && sel.value==='gentle');
-    }
-    function fillVoices(){
-      var sel = document.getElementById('speechVoice'); if(!sel) return;
-      if(!window.speechSynthesis) return;
-      var zh = zhVoices();
-      if(!zh.length){ try{ speechSynthesis.onvoiceschanged = function(){ speechSynthesis.onvoiceschanged=null; fillVoices(); }; }catch(e){} return; }
-      var prev = sel.value;
-      var opts = ['<option value="gentle">🌸 晓晓·温柔（放慢+轻柔，推荐）</option>'];
-      zh.forEach(function(v,i){ opts.push('<option value="v'+i+'">'+esc(v.name+' · '+v.lang)+'</option>'); });
-      sel.innerHTML = opts.join('');
-      if(prev){ sel.value = prev; }
-      else { sel.value = 'gentle'; }   // 默认首选温柔晓晓
-    }
-    function curVoice(){
-      var sel = document.getElementById('speechVoice');
-      if(sel && sel.value==='gentle'){
-        var xx = pickXiaoxiao();
-        if(xx) return xx;
-        var zh = zhVoices(); var f = zh.filter(isFemaleVoice);
-        return f.length ? f[0] : (zh[0]||null);
-      }
-      var zh = zhVoices();
-      if(!zh.length) return null;
-      if(sel && sel.value && sel.value.indexOf('v')===0){
-        var vi=parseInt(sel.value.slice(1),10); if(zh[vi]) return zh[vi];
-      }
-      var def = zh.filter(isFemaleVoice);
-      return def.length ? def[0] : zh[0];
-    }
     function updateSpeechBtn(){ var b=document.getElementById('speechBtn'); if(b) b.textContent = speechPlaying? '⏹ 停止朗诵' : '🔊 开始朗诵'; }
-    function stopDaySpeech(){ speechPlaying=false; if(speechAudio){ try{ speechAudio.pause(); }catch(e){} speechAudio=null; } try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} updateSpeechBtn(); }
+    function stopDaySpeech(){ speechPlaying=false; if(speechAudio){ try{ speechAudio.pause(); }catch(e){} speechAudio=null; } updateSpeechBtn(); }
     function startDaySpeech(){
       if(speechPlaying){ stopDaySpeech(); return; }
       var items = collectDaySpeech();
       if(!items.length){ alert('今日暂无可朗读的背诵内容。'); return; }
-      // 优先播放当天预生成的晓晓温柔版 MP3（不受系统语音包限制）
+      // 仅播放当天预生成的晓晓·温柔版 MP3（已去除系统语音/其他音色，全站唯一朗诵声音）
       var mp3url = speechMp3Url(curDay);
       speechAudio = new Audio(mp3url);
       speechAudio.loop = true;
       speechAudio.preload = 'auto';
       var settled=false;
-      function fallbackSynth(){ if(settled) return; settled=true; if(speechAudio){ try{ speechAudio.pause(); }catch(e){} speechAudio=null; } startDaySpeechSynth(items); }
-      speechAudio.oncanplay = function(){ if(settled) return; settled=true; speechPlaying=true; updateSpeechBtn(); speechAudio.play().catch(function(){ fallbackSynth(); }); };
-      speechAudio.onerror = function(){ fallbackSynth(); };
-      setTimeout(function(){ if(!settled){ fallbackSynth(); } }, 3000);
-    }
-    function startDaySpeechSynth(items){
-      if(!window.speechSynthesis){ alert('当前浏览器不支持语音朗读，请换 Chrome / Edge 试试。'); return; }
-      speechPlaying = true; updateSpeechBtn();
-      try{ speechSynthesis.cancel(); }catch(e){}
-      var started=false;
-      var gentle = isGentle();
-      function begin(){
-        var i=0;
-        function speakNext(){
-          if(!speechPlaying) return;
-          if(i>=items.length) i=0;
-          var u=new SpeechSynthesisUtterance(items[i]);
-          u.lang='zh-CN';
-          var v=curVoice(); if(v) u.voice=v;
-          if(gentle){ u.rate=0.85; u.pitch=0.9; } else { u.rate=0.95; u.pitch=1.0; }
-          u.onend=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
-          u.onerror=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
-          try{ speechSynthesis.speak(u); }catch(e){ speechPlaying=false; updateSpeechBtn(); }
-        }
-        speakNext();
-      }
-      if(speechSynthesis.getVoices().length===0){
-        speechSynthesis.onvoiceschanged=function(){ if(started) return; started=true; begin(); };
-        setTimeout(function(){ if(!started && speechPlaying){ started=true; begin(); } }, 1500);
-      } else { started=true; begin(); }
+      speechAudio.oncanplay = function(){
+        if(settled) return; settled=true;
+        speechPlaying=true; updateSpeechBtn();
+        speechAudio.play().catch(function(){ if(settled) return; settled=true; speechPlaying=false; updateSpeechBtn(); alert('该日晓晓温柔语音尚未生成，请联系重新生成。'); });
+      };
+      speechAudio.onerror = function(){
+        if(settled) return; settled=true;
+        speechPlaying=false; updateSpeechBtn();
+        alert('该日晓晓温柔语音尚未生成，请联系重新生成（或切到其他日期试试）。');
+      };
+      setTimeout(function(){ if(!settled){ settled=true; speechPlaying=false; updateSpeechBtn(); alert('该日晓晓温柔语音尚未生成，请联系重新生成。'); } }, 3000);
     }
     function renderKP(box, day){
       var mod = day.modName || (POL.modules[day.mod-1] && POL.modules[day.mod-1].name) || '本章';
-      var h = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:10px"><button id="speechBtn" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">🔊 开始朗诵</button><select id="speechVoice" title="选择朗读音色" style="padding:6px 8px;border-radius:8px;border:1px solid var(--line);font-size:13px;max-width:230px"></select><span style="color:var(--gray);font-size:12.5px">循环朗读今日必背知识点（可换音色，可后台播放）</span></div>';
+      var h = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:10px"><button id="speechBtn" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">🔊 开始朗诵</button><span style="color:var(--gray);font-size:12.5px">循环朗读今日必背知识点（晓晓·温柔声，可后台播放）</span></div>';
       h += '<div class="plan-tip">Day '+curDay+' · 下列知识点均来自考纲模块【'+esc(mod)+'】。先背熟，再去「选择题」用题检验、去「大题」练输出。</div>';
       h += '<div class="kp-ch">📖 本章：'+esc(mod)+'（共 '+day.keypoints.length+' 个知识点）</div>';
       h += '<div class="kp-list">';
@@ -2099,7 +2037,6 @@ window.addEventListener('error', function(e){
       });
       h += '</details>';
       box.innerHTML = h;
-      fillVoices();
       var sb = document.getElementById('speechBtn');
       if(sb) sb.onclick = function(){ startDaySpeech(); };
       Array.prototype.forEach.call(box.querySelectorAll('.kp-click'), function(el){
