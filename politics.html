@@ -1989,22 +1989,39 @@ window.addEventListener('error', function(e){
       return zh.length ? zh : vs;
     }
     function isFemaleVoice(v){ return v && !/kang|康|male|男/i.test(v.name) && /(xiao|yao|hui|yi|yun|yaoyao|云希|晓|瑶|慧|伊|雅|妍|女)/i.test(v.name); }
+    function pickXiaoxiao(){
+      var zh = zhVoices();
+      return zh.find(function(v){ return /xiaoxiao|晓晓/i.test(v.name); }) || null;
+    }
+    function isGentle(){
+      var sel = document.getElementById('speechVoice');
+      return !!(sel && sel.value==='gentle');
+    }
     function fillVoices(){
       var sel = document.getElementById('speechVoice'); if(!sel) return;
       if(!window.speechSynthesis) return;
       var zh = zhVoices();
       if(!zh.length){ try{ speechSynthesis.onvoiceschanged = function(){ speechSynthesis.onvoiceschanged=null; fillVoices(); }; }catch(e){} return; }
       var prev = sel.value;
-      sel.innerHTML = zh.map(function(v,i){ return '<option value="'+i+'">'+esc(v.name+' · '+v.lang)+'</option>'; }).join('');
-      var def = zh.findIndex(isFemaleVoice);
-      if(prev!=='' && zh[parseInt(prev,10)]) sel.value = prev;
-      else sel.value = String(def<0?0:def);
+      var opts = ['<option value="gentle">🌸 晓晓·温柔（放慢+轻柔，推荐）</option>'];
+      zh.forEach(function(v,i){ opts.push('<option value="v'+i+'">'+esc(v.name+' · '+v.lang)+'</option>'); });
+      sel.innerHTML = opts.join('');
+      if(prev){ sel.value = prev; }
+      else { sel.value = 'gentle'; }   // 默认首选温柔晓晓
     }
     function curVoice(){
+      var sel = document.getElementById('speechVoice');
+      if(sel && sel.value==='gentle'){
+        var xx = pickXiaoxiao();
+        if(xx) return xx;
+        var zh = zhVoices(); var f = zh.filter(isFemaleVoice);
+        return f.length ? f[0] : (zh[0]||null);
+      }
       var zh = zhVoices();
       if(!zh.length) return null;
-      var sel = document.getElementById('speechVoice');
-      if(sel && sel.value!==''){ var vi=parseInt(sel.value,10); if(zh[vi]) return zh[vi]; }
+      if(sel && sel.value && sel.value.indexOf('v')===0){
+        var vi=parseInt(sel.value.slice(1),10); if(zh[vi]) return zh[vi];
+      }
       var def = zh.filter(isFemaleVoice);
       return def.length ? def[0] : zh[0];
     }
@@ -2018,6 +2035,7 @@ window.addEventListener('error', function(e){
       speechPlaying = true; updateSpeechBtn();
       try{ speechSynthesis.cancel(); }catch(e){}
       var started=false;
+      var gentle = isGentle();
       function begin(){
         var i=0;
         function speakNext(){
@@ -2026,7 +2044,7 @@ window.addEventListener('error', function(e){
           var u=new SpeechSynthesisUtterance(items[i]);
           u.lang='zh-CN';
           var v=curVoice(); if(v) u.voice=v;
-          u.rate=0.95; u.pitch=1.0;
+          if(gentle){ u.rate=0.85; u.pitch=0.9; } else { u.rate=0.95; u.pitch=1.0; }
           u.onend=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
           u.onerror=function(){ if(!speechPlaying) return; i++; setTimeout(speakNext, 400); };
           try{ speechSynthesis.speak(u); }catch(e){ speechPlaying=false; updateSpeechBtn(); }
