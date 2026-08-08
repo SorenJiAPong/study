@@ -2011,7 +2011,7 @@ window.addEventListener('error', function(e){
     }
     function renderKP(box, day){
       var mod = day.modName || (POL.modules[day.mod-1] && POL.modules[day.mod-1].name) || '本章';
-      var h = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:10px"><button id="speechBtn" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">🔊 开始朗诵</button><span style="color:var(--gray);font-size:12.5px">循环朗读今日必背知识点（晓晓·温柔声，可后台播放）</span></div>';
+      var h = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 12px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:10px"><button id="speechBtn" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid #2e7d32;background:#2e7d32;color:#fff;cursor:pointer;font-size:14px">🔊 开始朗诵</button></div>';
       h += '<div class="plan-tip">Day '+curDay+' · 下列知识点均来自考纲模块【'+esc(mod)+'】。先背熟，再去「选择题」用题检验、去「大题」练输出。</div>';
       h += '<div class="kp-ch">📖 本章：'+esc(mod)+'（共 '+day.keypoints.length+' 个知识点）</div>';
       h += '<div class="kp-list">';
