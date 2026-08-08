@@ -1969,6 +1969,9 @@ window.addEventListener('error', function(e){
 
     /* ---------- 每日必背 · 朗诵（循环朗读，浏览器内置中文语音） ---------- */
     var speechPlaying = false;
+    var speechAudio = null;
+    var SPEECH_MP3_BASE = 'speech/day';
+    function speechMp3Url(day){ return SPEECH_MP3_BASE + (day<10?'0':'') + day + '.mp3'; }
     function stripHtml(s){ var d=document.createElement('div'); d.innerHTML=s||''; return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim(); }
     function collectDaySpeech(){
       var day = dayOf(curDay);
@@ -2026,12 +2029,24 @@ window.addEventListener('error', function(e){
       return def.length ? def[0] : zh[0];
     }
     function updateSpeechBtn(){ var b=document.getElementById('speechBtn'); if(b) b.textContent = speechPlaying? '⏹ 停止朗诵' : '🔊 开始朗诵'; }
-    function stopDaySpeech(){ speechPlaying=false; try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} updateSpeechBtn(); }
+    function stopDaySpeech(){ speechPlaying=false; if(speechAudio){ try{ speechAudio.pause(); }catch(e){} speechAudio=null; } try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} updateSpeechBtn(); }
     function startDaySpeech(){
-      if(!window.speechSynthesis){ alert('当前浏览器不支持语音朗读，请换 Chrome / Edge 试试。'); return; }
       if(speechPlaying){ stopDaySpeech(); return; }
       var items = collectDaySpeech();
       if(!items.length){ alert('今日暂无可朗读的背诵内容。'); return; }
+      // 优先播放当天预生成的晓晓温柔版 MP3（不受系统语音包限制）
+      var mp3url = speechMp3Url(curDay);
+      speechAudio = new Audio(mp3url);
+      speechAudio.loop = true;
+      speechAudio.preload = 'auto';
+      var settled=false;
+      function fallbackSynth(){ if(settled) return; settled=true; if(speechAudio){ try{ speechAudio.pause(); }catch(e){} speechAudio=null; } startDaySpeechSynth(items); }
+      speechAudio.oncanplay = function(){ if(settled) return; settled=true; speechPlaying=true; updateSpeechBtn(); speechAudio.play().catch(function(){ fallbackSynth(); }); };
+      speechAudio.onerror = function(){ fallbackSynth(); };
+      setTimeout(function(){ if(!settled){ fallbackSynth(); } }, 3000);
+    }
+    function startDaySpeechSynth(items){
+      if(!window.speechSynthesis){ alert('当前浏览器不支持语音朗读，请换 Chrome / Edge 试试。'); return; }
       speechPlaying = true; updateSpeechBtn();
       try{ speechSynthesis.cancel(); }catch(e){}
       var started=false;
