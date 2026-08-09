@@ -879,9 +879,9 @@ window.addEventListener('error', function(e){
       userRestate.forEach(function(it,i){ h+=restateItemHtml(it, 'restate:u:'+i, true, i); });
       return h+'</div>';
     }
-    var html=mineSection();
-    html+='<div style="margin:4px 0 14px"><button class="sub-btn" id="addRestateBtn" style="background:var(--terra);color:#fff;border-color:var(--terra)">➕ 添加复现/替换条目</button> '+
+    var html='<div style="margin:4px 0 14px"><button class="sub-btn" id="addRestateBtn" style="background:var(--terra);color:#fff;border-color:var(--terra)">➕ 添加复现/替换条目</button> '+
       '<span class="muted">（把自己遇到的复现/替换例子随手加进来）</span></div>';
+    html+=mineSection();
     (D.restateReplace||[]).forEach(function(blk){
       html += restateBlockHtml(blk.part, blk.desc, (blk.items||[]).map(function(it,i){return {it:it, key:'restate:'+blk.part+':'+i, mine:false};}), []);
     });
@@ -939,7 +939,7 @@ window.addEventListener('error', function(e){
       return h;
     }
     var groups=(D.confusables||[]).map(groupHTML);
-    var header = mineSection() + '<div style="margin:4px 0 14px"><button class="sub-btn" id="addConfBtn" style="background:var(--terra);color:#fff;border-color:var(--terra)">➕ 添加易混词</button></div>';
+    var header = '<div style="margin:4px 0 14px"><button class="sub-btn" id="addConfBtn" style="background:var(--terra);color:#fff;border-color:var(--terra)">➕ 添加易混词</button></div>' + mineSection();
     chunkRender(panel, header, groups, '');
     var acb=document.getElementById('addConfBtn'); if(acb) acb.onclick=function(){ openConf(null,null); };
   }
