@@ -104,6 +104,9 @@ window.addEventListener('error', function(e){
     padding:3px 11px;font-size:12px;margin:3px 5px 3px 0;border:1px solid var(--line)}
   /* item row with actions */
   .item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:11px;position:relative}
+  .fav-cat-h{margin:20px 0 9px;padding-bottom:7px;border-bottom:2px solid var(--terra);font-size:15px;color:var(--ink);letter-spacing:.3px}
+  .fav-cat-h:first-of-type{margin-top:8px}
+  .fav-cat{display:block}
   .item .row1{display:flex;align-items:flex-start;gap:10px}
   .item .body{flex:1;min-width:0}
   .item .w{font-size:15.5px;font-weight:700;color:var(--ink)}
@@ -1050,18 +1053,52 @@ window.addEventListener('error', function(e){
     return '<div class="card" style="margin-bottom:10px"><div class="row1"><div class="body"><div class="w">'+esc(x.text)+'</div></div>'+actBtns(x.key)+'</div></div>';
   }
 
-  // 收藏
+  // 收藏（按来源模块分类）
   function renderFav(){
     var keys=Object.keys(F);
     if(!keys.length){ panel.innerHTML='<div class="callout">尚未收藏任何内容。在任意模块点「☆收藏」即可在此汇总。</div>'; return; }
-    var html='<div class="callout">共收藏 '+keys.length+' 条。收藏夹仅本地保存，不污染原始资料。</div>';
-    keys.forEach(function(k){
-      html += favCard(k);
+    var CATS=[
+      {key:'grammar', label:'📚 语法体系'},
+      {key:'phrases', label:'🔗 短语搭配'},
+      {key:'vocab',   label:'📖 词汇'},
+      {key:'essay',   label:'📝 作文素材'},
+      {key:'restate', label:'🔁 复现替换'},
+      {key:'conf',    label:'⚠️ 易混词'},
+      {key:'long',    label:'📜 长难句'},
+      {key:'tips',    label:'🎯 蒙题技巧'},
+      {key:'today',   label:'🎯 今日积累'},
+      {key:'doc',     label:'📄 导入文档'},
+      {key:'other',   label:'📦 其它'}
+    ];
+    function catOf(k){
+      if(k.indexOf('grammar')===0) return 'grammar';
+      if(k.indexOf('phrases')===0) return 'phrases';
+      if(k.indexOf('vocab')===0) return 'vocab';
+      if(k.indexOf('essay.')===0) return 'essay';
+      if(k.indexOf('restate')===0) return 'restate';
+      if(k.indexOf('conf')===0 || k.indexOf('uc:')===0) return 'conf';
+      if(k.indexOf('long')===0 || k.indexOf('reallong')===0) return 'long';
+      if(k.indexOf('tips')===0) return 'tips';
+      if(k.indexOf('today')===0) return 'today';
+      if(k.indexOf('doc')===0) return 'doc';
+      return 'other';
+    }
+    var groups={};
+    keys.forEach(function(k){ var c=catOf(k); (groups[c]=groups[c]||[]).push(k); });
+    var html='<div class="callout">共收藏 '+keys.length+' 条，已按来源模块分类。收藏夹仅本地保存，不污染原始资料。</div>';
+    CATS.forEach(function(cat){
+      var g=groups[cat.key];
+      if(!g||!g.length) return;
+      html+='<h3 class="fav-cat-h">'+cat.label+' <span class="muted">('+g.length+')</span></h3><div class="fav-cat">';
+      g.forEach(function(k){ html+=favCard(k); });
+      html+='</div>';
     });
     panel.innerHTML=html; bindActs(panel);
   }
   function favCard(k){
-    var body = favBody(k);
+    var body;
+    try{ body = favBody(k); }
+    catch(e){ body = '<div class="w">'+esc(k)+'</div><div class="muted">（源数据已失效或已删除，可点「★已藏」取消收藏）</div>'; }
     return '<div class="item"><div class="row1"><div class="body">'+body+'</div>'+actBtns(k)+'</div></div>';
   }
   function favBody(k){
