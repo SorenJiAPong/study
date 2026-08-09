@@ -449,14 +449,68 @@ window.addEventListener('error', function(e){
     }
     openModal(idx==null?'➕ 添加作文素材':'✏️ 编辑作文素材');
   }
+  function parseConfInput(text){
+    var POS_RE=/^(v\.?|vi\.?|vt\.?|n\.?|adj\.?|adv\.?|prep\.?|conj\.?|pron\.?|art\.?|int\.?|num\.?|c\.|u\.|sb\.?|sth\.?)$/i;
+    var POS_CN={'动词':'v.','名词':'n.','形容词':'adj.','副词':'adv.','介词':'prep.','连词':'conj.','代词':'pron.','冠词':'art.','数词':'num.','感叹词':'int.'};
+    var items=[];
+    (text||'').split('\n').map(function(s){return s.trim();}).filter(Boolean).forEach(function(ln){
+      var tokens, sep=' ';
+      if(ln.indexOf('|')>=0){ tokens=ln.split('|'); sep='|'; }
+      else if(ln.indexOf('、')>=0){ tokens=ln.split('、'); sep='、'; }
+      else if(ln.indexOf('\t')>=0){ tokens=ln.split('\t'); sep='\t'; }
+      else tokens=ln.split(/\s+/);
+      tokens=tokens.map(function(t){return t.trim();}).filter(Boolean);
+      if(!tokens.length) return;
+      if(sep!==' '){
+        var w0=tokens[0]||'';
+        var pRaw=tokens[1]||'';
+        var pos=(POS_RE.test(pRaw)||POS_CN[pRaw]!=null)?(POS_CN[pRaw]!=null?POS_CN[pRaw]:pRaw):'';
+        var meaning=tokens.slice(2).filter(function(t){return /[一-龥]/.test(t);}).join('');
+        if(!pos && /[一-龥]/.test(pRaw)) meaning=(pRaw+(meaning?' '+meaning:'')).trim();
+        var example=tokens[tokens.length-1]||'';
+        if(example===w0 || /[一-龥]/.test(example)) example='';
+        if(w0) items.push({word:w0,pos:pos,meaning:meaning,example:example});
+        return;
+      }
+      var posIdx=-1;
+      tokens.forEach(function(t,i){ if(posIdx<0 && (POS_RE.test(t)||POS_CN[t]!=null)) posIdx=i; });
+      var pos = posIdx>=0 ? (POS_CN[tokens[posIdx]]!=null?POS_CN[tokens[posIdx]]:tokens[posIdx]) : '';
+      var word='';
+      tokens.forEach(function(t,i){ if(i!==posIdx && !word && /^[a-z][a-z\-']*$/i.test(t)) word=t; });
+      if(!word){ tokens.forEach(function(t){ if(!word && /^[a-z][a-z\-']*$/i.test(t)) word=t; }); }
+      var removeIdx={}; if(posIdx>=0) removeIdx[posIdx]=1;
+      tokens.forEach(function(t,i){ if(i!==posIdx && /[一-龥]/.test(t)) removeIdx[i]=1; });
+      var wordIdx=-1;
+      tokens.forEach(function(t,i){ if(wordIdx<0 && i!==posIdx && !removeIdx[i] && t===word) wordIdx=i; });
+      if(wordIdx>=0) removeIdx[wordIdx]=1;
+      var exTokens=[]; tokens.forEach(function(t,i){ if(!removeIdx[i]) exTokens.push(t); });
+      var example=exTokens.join(' ').trim();
+      if(example && !(example.split(/\s+/).length>=2 || /[.?!]$/.test(example))) example='';
+      var meaning=tokens.filter(function(t,i){ return i!==posIdx && /[一-龥]/.test(t); }).join('');
+      if(word) items.push({word:word,pos:pos,meaning:meaning,example:example});
+    });
+    return items;
+  }
+  function refreshConfPreview(){
+    var ta=document.getElementById('confPaste'); if(!ta) return;
+    var items=parseConfInput(ta.value);
+    var box=document.getElementById('confPreview'); if(!box) return;
+    if(!items.length){ box.innerHTML='<div class="muted" style="font-size:12px;padding:6px 0">粘贴后这里会实时显示识别结果。</div>'; return; }
+    var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px"><tr style="background:#f3f6f4"><th style="border:1px solid #e2e8e4;padding:4px 6px;text-align:left">单词</th><th style="border:1px solid #e2e8e4;padding:4px 6px;text-align:left">词性</th><th style="border:1px solid #e2e8e4;padding:4px 6px;text-align:left">含义</th><th style="border:1px solid #e2e8e4;padding:4px 6px;text-align:left">例句</th></tr>';
+    items.forEach(function(it){ h+='<tr><td style="border:1px solid #e2e8e4;padding:4px 6px">'+esc(it.word)+'</td><td style="border:1px solid #e2e8e4;padding:4px 6px">'+esc(it.pos||'—')+'</td><td style="border:1px solid #e2e8e4;padding:4px 6px">'+esc(it.meaning||'—')+'</td><td style="border:1px solid #e2e8e4;padding:4px 6px">'+esc(it.example||'—')+'</td></tr>'; });
+    h+='</table>';
+    box.innerHTML=h;
+  }
   function openConf(entry, idx){
     modalCtx={type:'conf', idx:(idx==null?null:idx)};
     var e=entry||{};
     var lines=(e.items||[]).map(function(it){ return (it.word||'')+' | '+(it.pos||'')+' | '+(it.meaning||'')+' | '+(it.example||''); }).join('\n');
     modalFields.innerHTML =
-      fieldHTML('易混词（用空格/逗号分隔）*','group', (e.group||[]).join(' / '), {placeholder:'如 affect / effect'}) +
+      fieldHTML('易混词组（留空则按下方粘贴自动生成）','group', (e.group||[]).join(' / '), {placeholder:'如 affect / effect（可留空）'}) +
       fieldHTML('记忆口诀（可选）','tip', e.tip) +
-      '<label class="mf"><span>每个词一行：word | 词性 | 含义 | 例句 *</span><textarea data-name="items" rows="5" placeholder="affect | v. | 影响 | The weather affects my mood.\n effect | n. | 结果 | The effect is clear.">'+esc(lines)+'</textarea></label>';
+      '<label class="mf"><span>整组粘贴，每行一个词，自动识别「单词 / 词性 / 含义 / 例句」：</span><textarea id="confPaste" data-name="items" rows="6" placeholder="affect v. 影响 The weather affects my mood.&#10;effect n. 结果 The effect is clear.&#10;（也可每行用 | 分隔；词性支持 v./n./adj./adv. 或 动词/名词 等）">'+esc(lines)+'</textarea></label>' +
+      '<div id="confPreview" class="conf-preview"></div>';
+    setTimeout(function(){ var ta=document.getElementById('confPaste'); if(ta) ta.addEventListener('input', refreshConfPreview); refreshConfPreview(); }, 0);
     openModal(idx==null?'➕ 添加易混词':'✏️ 编辑易混词');
   }
   function openGrammar(entry, idx){
@@ -494,12 +548,9 @@ window.addEventListener('error', function(e){
       if(modalCtx.idx==null) userEssay.push(rec3); else userEssay[modalCtx.idx]=rec3;
       saveArr(LS_UE, userEssay); renderEssay();
     } else if(modalCtx.type==='conf'){
-      if(!o.group){ showErr('请填写易混词（如 affect / effect）'); return; }
-      var grp=o.group.split(/[\s,，、/]+/).filter(Boolean);
-      var items=(o.items||'').split('\n').map(function(s){return s.trim();}).filter(Boolean).map(function(ln){
-        var p=ln.split('|').map(function(x){return x.trim();}); return {word:p[0]||'', pos:p[1]||'', meaning:p[2]||'', example:p[3]||''};
-      }).filter(function(it){return it.word;});
-      if(!items.length){ showErr('请在文本框每行填一个词：word | 词性 | 含义 | 例句'); return; }
+      var items=parseConfInput(o.items||'');
+      if(!items.length){ showErr('请在文本框粘贴或填写易混词（每行一个词，如：affect v. 影响 例句）'); return; }
+      var grp=(o.group||'').trim()? o.group.split(/[\s,，、/]+/).filter(Boolean) : items.map(function(it){return it.word;});
       var rec4={group:grp, items:items, tip:o.tip||'', mine:true};
       if(modalCtx.idx==null) userConf.push(rec4); else userConf[modalCtx.idx]=rec4;
       saveArr(LS_UC, userConf); renderConfusables();
